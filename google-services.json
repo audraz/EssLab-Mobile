@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "440960253397",
+    "project_id": "eab-7be6d",
+    "storage_bucket": "eab-7be6d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:440960253397:android:99976bb5069de54ccf915c",
+        "android_client_info": {
+          "package_name": "com.esslab.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAlOupgbFc1e5Cm2iavBOLDwuxS12jvBzQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
