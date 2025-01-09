@@ -17,7 +17,7 @@ const Level2Page = () => {
   const router = useRouter();
 
   const handleNext = () => {
-    router.push("/level2quiz");
+    router.push("/quiz/level2quiz");
   };
 
   const handleBack = () => {
