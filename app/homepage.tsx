@@ -15,6 +15,15 @@ import { doc, getDoc } from "firebase/firestore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
+const levels = [
+  { level: 1, title: "Introduction to Essay" },
+  { level: 2, title: "Descriptive Essay" },
+  { level: 3, title: "Narrative Essay" },
+  { level: 4, title: "Expository Essay" },
+  { level: 5, title: "Persuasive Essay" },
+  { level: 6, title: "Argumentative Essay" },
+];
+
 const HomePage = () => {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -49,6 +58,10 @@ const HomePage = () => {
     return () => unsubscribe();
   }, []);
 
+  const handleLevelClick = (level: number) => {
+    Alert.alert("Feature Unavailable", `Level ${level} is not available yet.`);
+  };
+
   const handleLogout = async () => {
     try {
       await auth.signOut();
@@ -64,23 +77,22 @@ const HomePage = () => {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Image
-          source={require("../assets/logo.png")}
-          style={styles.logo}
-        />
+        <Image source={require("../assets/logo.png")} style={styles.logo} />
         <View style={styles.nav}>
           <TouchableOpacity
             onPress={() => router.push("/homepage")}
-            style={styles.navButton}
+            style={[styles.navButton, styles.activeNavButton]}
           >
             <Image
               source={require("../assets/home.png")}
               style={styles.icon}
             />
-            <Text style={styles.navButtonText}>Home</Text>
+            <Text style={[styles.navButtonText, styles.activeNavButtonText]}>
+              Home
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => Alert.alert("Feature Unavailable", "Profile is not available yet.")}
+            onPress={() => router.push("/profile")}
             style={styles.navButton}
           >
             <Image
@@ -90,7 +102,10 @@ const HomePage = () => {
             <Text style={styles.navButtonText}>Profile</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={() => setMenuOpen(!menuOpen)} style={styles.menuButton}>
+        <TouchableOpacity
+          onPress={() => setMenuOpen(!menuOpen)}
+          style={styles.menuButton}
+        >
           <Text style={styles.menuIcon}>☰</Text>
         </TouchableOpacity>
         {menuOpen && (
@@ -130,6 +145,22 @@ const HomePage = () => {
           <Text style={styles.getStartedButtonText}>Get Started</Text>
         </TouchableOpacity>
       </View>
+
+
+      {/* Roadmap Levels */}
+      <View style={styles.roadmapPath}>
+        {levels.map((level) => (
+          <View style={styles.roadmapLevel} key={level.level}>
+            <TouchableOpacity
+              style={styles.levelCircle}
+              onPress={() => handleLevelClick(level.level)}
+            >
+              <Text style={styles.levelText}>{level.level}</Text>
+            </TouchableOpacity>
+            <Text style={styles.levelTitle}>{level.title}</Text>
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 };
@@ -148,7 +179,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#DDD",
+    borderBottomColor: "#DDD", 
+    width: "100%",
   },
   logo: {
     width: 100,
@@ -157,17 +189,25 @@ const styles = StyleSheet.create({
   },
   nav: {
     flexDirection: "row",
-    alignItems: "center",
   },
   navButton: {
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: 10,
+    paddingBottom: 5,
   },
   navButtonText: {
+    marginLeft: 5,
     color: "#006B49",
     fontWeight: "bold",
-    marginLeft: 5,
+  },
+  activeNavButton: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#006B49",
+  },
+  activeNavButtonText: {
+    color: "#006B49",
+    fontWeight: "bold",
   },
   icon: {
     width: 20,
@@ -203,10 +243,13 @@ const styles = StyleSheet.create({
     margin: 20,
     padding: 20,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#DDD",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    alignItems: "center",
   },
   welcomeTitle: {
     fontSize: 24,
@@ -238,6 +281,34 @@ const styles = StyleSheet.create({
   getStartedButtonText: {
     color: "#FFFFFF",
     fontWeight: "bold",
+    textAlign: "center",
+  },
+  roadmapPath: {
+    flex: 1,
+    alignItems: "center",
+    marginTop: 40,
+  },
+  roadmapLevel: {
+    alignItems: "center",
+    marginBottom: 30,
+  },
+  levelCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#DE85C7",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  levelText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  levelTitle: {
+    fontSize: 14,
+    color: "#333",
     textAlign: "center",
   },
 });
