@@ -27,20 +27,20 @@ export default function Register() {
   
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  
       const user = userCredential.user;
+  
       await setDoc(doc(firestore, "users", user.uid), {
         name,
         email,
+        createdAt: new Date().toISOString(), 
       });
   
       Alert.alert("Success", "Signup successful!");
       router.push("homepage"); 
-      
     } catch (error) {
       Alert.alert("Error", error.message || "An unknown error occurred during sign-up.");
     }
-  };  
+  };
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
