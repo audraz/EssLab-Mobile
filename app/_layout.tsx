@@ -9,6 +9,10 @@ export default function Layout() {
       <Stack.Screen name="profile" options={{ headerShown: false }} />
       <Stack.Screen name="level1" options={{ headerShown: false }} />
       <Stack.Screen name="level1quiz" options={{ headerShown: false }} />
+      <Stack.Screen name="level2" options={{ headerShown: false }} />
+      <Stack.Screen name="level2quiz" options={{ headerShown: false }} />
+      <Stack.Screen name="level3" options={{ headerShown: false }} />
+      <Stack.Screen name="level3quiz" options={{ headerShown: false }} />
     </Stack>
   );
 }
