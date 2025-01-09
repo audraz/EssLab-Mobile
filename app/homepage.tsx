@@ -59,8 +59,9 @@ const HomePage = () => {
   }, []);
 
   const handleLevelClick = (level: number) => {
-    Alert.alert("Feature Unavailable", `Level ${level} is not available yet.`);
-  };
+    const validPath = `/level${level}` as `/level${1 | 2 | 3 | 4 | 5 | 6}`;
+    router.push(validPath);
+  };  
 
   const handleLogout = async () => {
     try {
