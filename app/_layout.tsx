@@ -13,6 +13,12 @@ export default function Layout() {
       <Stack.Screen name="level2quiz" options={{ headerShown: false }} />
       <Stack.Screen name="level3" options={{ headerShown: false }} />
       <Stack.Screen name="level3quiz" options={{ headerShown: false }} />
+      <Stack.Screen name="level4" options={{ headerShown: false }} />
+      <Stack.Screen name="level4quiz" options={{ headerShown: false }} />
+      <Stack.Screen name="level5" options={{ headerShown: false }} />
+      <Stack.Screen name="level5quiz" options={{ headerShown: false }} />
+      <Stack.Screen name="level6" options={{ headerShown: false }} />
+      <Stack.Screen name="level6quiz" options={{ headerShown: false }} />
     </Stack>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,8 +8,11 @@ import {
   ScrollView,
   Modal,
   Image,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { auth, firestore } from "../config/firebaseConfig";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -79,6 +82,19 @@ const Level2Quiz = () => {
   const [progress, setProgress] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number | undefined }>({});
   const [showModal, setShowModal] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUserId(user.uid);
+      } else {
+        Alert.alert("Error", "User not logged in.");
+        router.push("/login");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleOptionClick = (index: number) => {
     setAnswers({ ...answers, [currentQuestion]: index });
@@ -110,11 +126,33 @@ const Level2Quiz = () => {
     setShowModal(false);
   };
 
-  const handleReturnHome = () => {
+  const updateProgress = async () => {
+    if (!userId) return;
+    try {
+      const userDocRef = doc(firestore, "users", userId);
+      const userSnapshot = await getDoc(userDocRef);
+
+      if (userSnapshot.exists()) {
+        const progress = userSnapshot.data()?.progress || {};
+        progress["level_2"] = true;
+        progress["level_3"] = true; 
+
+        await updateDoc(userDocRef, { progress });
+      } else {
+        console.error("User document not found.");
+      }
+    } catch (error) {
+      console.error("Error updating progress:", error);
+    }
+  };
+
+  const handleReturnHome = async () => {
+    await updateProgress();
     router.push("/homepage");
   };
 
-  const handleNextLevel = () => {
+  const handleNextLevel = async () => {
+    await updateProgress();
     router.push("/level3");
   };
 
@@ -165,11 +203,6 @@ const Level2Quiz = () => {
         {currentQuestion < questions.length - 1 && (
           <TouchableOpacity style={styles.navButton} onPress={handleNext}>
             <Text style={styles.navButtonText}>Next</Text>
-          </TouchableOpacity>
-        )}
-        {currentQuestion === questions.length - 1 && (
-          <TouchableOpacity style={styles.navButton} onPress={() => setShowModal(true)}>
-            <Text style={styles.navButtonText}>Finish Quiz</Text>
           </TouchableOpacity>
         )}
       </View>

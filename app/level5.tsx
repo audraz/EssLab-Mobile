@@ -49,7 +49,7 @@ const Level5Page = () => {
 
       {/* Title and Summary */}
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Narrative Essay</Text>
+        <Text style={styles.title}>Persuasive Essay</Text>
         <Text style={styles.summary}>
             This video explains how to write a persuasive essay, which is used to express opinions and convince readers to agree with a specific viewpoint. Persuasive writing involves a clear claim, supported by reasons and backed up by evidence. The essay structure includes an introduction, body paragraphs, and a conclusion. In the introduction, the writer presents their claim, supported by the first reason and relevant evidence. Additional body paragraphs offer more reasons and evidence, and an optional counter-argument paragraph can strengthen the argument by addressing opposing views. The conclusion restates the claim, summarizes key reasons, and calls the reader to action. Key steps for writing a persuasive essay include identifying the audience, choosing a topic, stating a clear position, providing reasons, supporting these reasons with evidence, and organizing the writing effectively. Editing and revising are essential before sharing the final draft.
         </Text>

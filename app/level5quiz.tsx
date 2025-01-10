@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,63 +8,66 @@ import {
   ScrollView,
   Modal,
   Image,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { auth, firestore } from "../config/firebaseConfig";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 const questions = [
-    {
-      id: 1,
-      question: "What is the main purpose of a persuasive essay?",
-      options: [
-        "To tell a story",
-        "To describe a scene",
-        "To convince the reader of a particular viewpoint",
-        "To entertain the audience",
-      ],
-      correct: 3,
-    },
-    {
-      id: 2,
-      question: "Which of the following is NOT a key component of a persuasive essay?",
-      options: ["Claim", "Evidence", "Character development", "Reasons"],
-      correct: 3,
-    },
-    {
-      id: 3,
-      question: "Where is the main claim usually presented in a persuasive essay?",
-      options: [
-        "In the conclusion",
-        "In the introduction",
-        "In the middle",
-        "In the counter-argument",
-      ],
-      correct: 2,
-    },
-    {
-      id: 4,
-      question: "What can be used to support reasons in a persuasive essay?",
-      options: [
-        "Personal feelings",
-        "Artistic expressions",
-        "Evidence, like facts or expert opinions",
-        "Unrelated anecdotes",
-      ],
-      correct: 3,
-    },
-    {
-      id: 5,
-      question: "What should be avoided in a persuasive essay?",
-      options: [
-        "'This is a persuasive essay.'",
-        "'I like traveling.'",
-        "'Are you feeling stressed and overwhelmed?'",
-        "'Traveling is good'",
-      ],
-      correct: 3,
-    },
-  ]; 
+  {
+    id: 1,
+    question: "What is the main purpose of a persuasive essay?",
+    options: [
+      "To tell a story",
+      "To describe a scene",
+      "To convince the reader of a particular viewpoint",
+      "To entertain the audience",
+    ],
+    correct: 2,
+  },
+  {
+    id: 2,
+    question: "Which of the following is NOT a key component of a persuasive essay?",
+    options: ["Claim", "Evidence", "Character development", "Reasons"],
+    correct: 2,
+  },
+  {
+    id: 3,
+    question: "Where is the main claim usually presented in a persuasive essay?",
+    options: [
+      "In the conclusion",
+      "In the introduction",
+      "In the middle",
+      "In the counter-argument",
+    ],
+    correct: 1,
+  },
+  {
+    id: 4,
+    question: "What can be used to support reasons in a persuasive essay?",
+    options: [
+      "Personal feelings",
+      "Artistic expressions",
+      "Evidence, like facts or expert opinions",
+      "Unrelated anecdotes",
+    ],
+    correct: 2,
+  },
+  {
+    id: 5,
+    question: "What should be avoided in a persuasive essay?",
+    options: [
+      "'This is a persuasive essay.'",
+      "'I like traveling.'",
+      "'Are you feeling stressed and overwhelmed?'",
+      "'Traveling is good'",
+    ],
+    correct: 2,
+  },
+];
 
 const progressIncrement = 100 / questions.length;
 
@@ -74,9 +77,21 @@ const Level5Quiz = () => {
   const [progress, setProgress] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number | undefined }>({});
   const [showModal, setShowModal] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUserId(user.uid);
+      } else {
+        Alert.alert("Error", "User not logged in.");
+        router.push("/login");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleOptionClick = (index: number) => {
-    const correctAnswer = questions[currentQuestion].correct - 1;
     setAnswers({ ...answers, [currentQuestion]: index });
 
     if (currentQuestion === questions.length - 1) {
@@ -106,11 +121,33 @@ const Level5Quiz = () => {
     setShowModal(false);
   };
 
-  const handleReturnHome = () => {
+  const updateProgress = async () => {
+    if (!userId) return;
+    try {
+      const userDocRef = doc(firestore, "users", userId);
+      const userSnapshot = await getDoc(userDocRef);
+
+      if (userSnapshot.exists()) {
+        const progress = userSnapshot.data()?.progress || {};
+        progress["level_5"] = true;
+        progress["level_6"] = true; 
+
+        await updateDoc(userDocRef, { progress });
+      } else {
+        console.error("User document not found.");
+      }
+    } catch (error) {
+      console.error("Error updating progress:", error);
+    }
+  };
+
+  const handleReturnHome = async () => {
+    await updateProgress();
     router.push("/homepage");
   };
 
-  const handleNextLevel = () => {
+  const handleNextLevel = async () => {
+    await updateProgress();
     router.push("/level6");
   };
 
@@ -128,10 +165,10 @@ const Level5Quiz = () => {
 
       {/* Question Section */}
       <ScrollView contentContainerStyle={styles.quizContainer}>
-        <Text style={styles.title}>Quiz: Expository Essay</Text>
+        <Text style={styles.title}>Quiz: Persuasive Essay</Text>
         <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
         {questions[currentQuestion].options.map((option, index) => {
-          const isCorrect = questions[currentQuestion].correct - 1 === index;
+          const isCorrect = questions[currentQuestion].correct === index;
           const isSelected = answers[currentQuestion] === index;
 
           return (
@@ -161,11 +198,6 @@ const Level5Quiz = () => {
         {currentQuestion < questions.length - 1 && (
           <TouchableOpacity style={styles.navButton} onPress={handleNext}>
             <Text style={styles.navButtonText}>Next</Text>
-          </TouchableOpacity>
-        )}
-        {currentQuestion === questions.length - 1 && (
-          <TouchableOpacity style={styles.navButton} onPress={() => setShowModal(true)}>
-            <Text style={styles.navButtonText}>Finish Quiz</Text>
           </TouchableOpacity>
         )}
       </View>

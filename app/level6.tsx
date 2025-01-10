@@ -49,7 +49,7 @@ const Level6Page = () => {
 
       {/* Title and Summary */}
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Narrative Essay</Text>
+        <Text style={styles.title}>Argumentative Essay</Text>
         <Text style={styles.summary}>
             This video provides a step-by-step guide to writing an argumentative essay, commonly structured with two arguments supporting the writer's opinion and one counter-argument. Known as the "hamburger essay," this format includes an introduction, three body paragraphs, and a conclusion. To begin, it's essential to analyze the essay question for clues that will help shape the response, identifying the subject, purpose, and any required structure, such as word count. Planning is crucial for effective organization. Various planning methods, like spider diagrams, can help generate ideas. To create strong body paragraphs, choose the main points that best support the opinion, each beginning with a clear topic sentence. The counterpoint in one paragraph acknowledges an opposing view, enhancing the argument. The video emphasizes simplicity in layout, analysis, and planning to ensure clarity and organization.
         </Text>

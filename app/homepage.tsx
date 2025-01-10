@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -26,8 +26,9 @@ const levels = [
 
 const HomePage = () => {
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [userName, setUserName] = useState("User");
+  const [unlockedLevels, setUnlockedLevels] = useState<number[]>([1]); 
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserName = async (uid: string) => {
@@ -46,12 +47,31 @@ const HomePage = () => {
       }
     };
 
+    const fetchProgress = async (uid: string) => {
+      try {
+        const userDoc = await getDoc(doc(firestore, "users", uid));
+        if (userDoc.exists()) {
+          const progress = userDoc.data()?.progress || {};
+          const unlocked = Object.keys(progress)
+            .filter((key) => progress[key])
+            .map((key) => parseInt(key.split("_")[1], 10));
+          setUnlockedLevels([1, ...unlocked]); 
+        } else {
+          console.error("No user progress found in Firestore.");
+        }
+      } catch (error) {
+        console.error("Error fetching user progress:", error);
+      }
+    };
+
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
+        setUserId(user.uid);
         fetchUserName(user.uid);
+        fetchProgress(user.uid);
       } else {
+        setUserId(null);
         setUserName("User");
-        console.log("No user is logged in.");
       }
     });
 
@@ -59,9 +79,13 @@ const HomePage = () => {
   }, []);
 
   const handleLevelClick = (level: number) => {
-    const validPath = `/level${level}` as `/level${1 | 2 | 3 | 4 | 5 | 6}`;
-    router.push(validPath);
-  };  
+    if (unlockedLevels.includes(level)) {
+      const validPath = `/level${level}` as `/level${1 | 2 | 3 | 4 | 5 | 6}`;
+      router.push(validPath);
+    } else {
+      Alert.alert("Level Locked", "Complete the previous levels to unlock this one.");
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -84,38 +108,17 @@ const HomePage = () => {
             onPress={() => router.push("/homepage")}
             style={[styles.navButton, styles.activeNavButton]}
           >
-            <Image
-              source={require("../assets/home.png")}
-              style={styles.icon}
-            />
-            <Text style={[styles.navButtonText, styles.activeNavButtonText]}>
-              Home
-            </Text>
+            <Image source={require("../assets/home.png")} style={styles.icon} />
+            <Text style={[styles.navButtonText, styles.activeNavButtonText]}>Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/profile")}
-            style={styles.navButton}
-          >
-            <Image
-              source={require("../assets/profile.png")}
-              style={styles.icon}
-            />
+          <TouchableOpacity onPress={() => router.push("/profile")} style={styles.navButton}>
+            <Image source={require("../assets/profile.png")} style={styles.icon} />
             <Text style={styles.navButtonText}>Profile</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          onPress={() => setMenuOpen(!menuOpen)}
-          style={styles.menuButton}
-        >
+        <TouchableOpacity onPress={handleLogout} style={styles.menuButton}>
           <Text style={styles.menuIcon}>☰</Text>
         </TouchableOpacity>
-        {menuOpen && (
-          <View style={styles.menuDropdown}>
-            <TouchableOpacity onPress={handleLogout} style={styles.menuItem}>
-              <Text style={styles.menuItemText}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
 
       {/* Welcome Card */}
@@ -127,33 +130,22 @@ const HomePage = () => {
         </Text>
         <Text style={styles.welcomeMessage}>
           Explore our roadmap of interactive levels, designed to take you
-          step-by-step through different essay styles. Each level is tailored to
-          build your skills and confidence as a writer. Ready to start your
-          journey?
+          step-by-step through different essay styles. Ready to start your journey?
         </Text>
         <View style={styles.imageContainer}>
-          <Image
-            source={require("../assets/image.png")}
-            style={styles.responsiveImage}
-          />
+          <Image source={require("../assets/image.png")} style={styles.responsiveImage} />
         </View>
-        <TouchableOpacity
-          onPress={() =>
-            Alert.alert("Feature Unavailable", "Get Started is not available yet.")
-          }
-          style={styles.getStartedButton}
-        >
-          <Text style={styles.getStartedButtonText}>Get Started</Text>
-        </TouchableOpacity>
       </View>
-
 
       {/* Roadmap Levels */}
       <View style={styles.roadmapPath}>
         {levels.map((level) => (
           <View style={styles.roadmapLevel} key={level.level}>
             <TouchableOpacity
-              style={styles.levelCircle}
+              style={[
+                styles.levelCircle,
+                unlockedLevels.includes(level.level) ? styles.unlocked : styles.locked,
+              ]}
               onPress={() => handleLevelClick(level.level)}
             >
               <Text style={styles.levelText}>{level.level}</Text>
@@ -180,8 +172,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#DDD", 
-    width: "100%",
+    borderBottomColor: "#DDD",
   },
   logo: {
     width: 100,
@@ -195,7 +186,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: 10,
-    paddingBottom: 5,
   },
   navButtonText: {
     marginLeft: 5,
@@ -222,23 +212,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#006B49",
   },
-  menuDropdown: {
-    position: "absolute",
-    top: 50,
-    right: 20,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 8,
-    padding: 10,
-  },
-  menuItem: {
-    paddingVertical: 10,
-  },
-  menuItemText: {
-    color: "#FF4D4F",
-    fontWeight: "bold",
-  },
   welcomeCard: {
     backgroundColor: "#FFFFFF",
     margin: 20,
@@ -254,7 +227,6 @@ const styles = StyleSheet.create({
   },
   welcomeTitle: {
     fontSize: 24,
-    fontFamily: "Italiana",
     fontWeight: "bold",
     marginBottom: 10,
   },
@@ -273,17 +245,6 @@ const styles = StyleSheet.create({
     height: 200,
     resizeMode: "contain",
   },
-  getStartedButton: {
-    backgroundColor: "#006B49",
-    padding: 10,
-    borderRadius: 8,
-    alignSelf: "center",
-  },
-  getStartedButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
   roadmapPath: {
     flex: 1,
     alignItems: "center",
@@ -297,10 +258,15 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#DE85C7",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
+  },
+  unlocked: {
+    backgroundColor: "#DE85C7",
+  },
+  locked: {
+    backgroundColor: "#CCC",
   },
   levelText: {
     color: "#FFFFFF",

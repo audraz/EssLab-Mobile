@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,68 +8,71 @@ import {
   ScrollView,
   Modal,
   Image,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { auth, firestore } from "../config/firebaseConfig";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 const questions = [
-    {
-      id: 1,
-      question: "What is the main purpose of an expository essay?",
-      options: [
-        "To express personal opinions on a topic.",
-        "To argue for one side of an issue.",
-        "To provide a balanced explanation and detailed information about a topic.",
-        "To persuade the reader to take action.",
-      ],
-      correct: 3,
-    },
-    {
-      id: 2,
-      question: "Which of the following best describes a thesis statement in an expository essay?",
-      options: [
-        "It argues one side of a debate.",
-        "It expresses personal opinion.",
-        "It is objective and uses statements like 'is.'",
-        "It suggests what should happen regarding the topic.",
-      ],
-      correct: 3,
-    },
-    {
-      id: 3,
-      question: "Which type of paragraph is not suitable for the body of an expository essay?",
-      options: [
-        "Description.",
-        "Definition.",
-        "Problem and solution.",
-        "Opinion and personal judgment.",
-      ],
-      correct: 4,
-    },
-    {
-      id: 4,
-      question: "What is included in the introduction of an expository essay?",
-      options: [
-        "A conclusion and judgment.",
-        "An evaluation of the topic.",
-        "An explanation of the thesis, topic relevance, and essay structure.",
-        "A list of opinions about the topic.",
-      ],
-      correct: 3,
-    },
-    {
-      id: 5,
-      question: "What should be avoided in an expository essay?",
-      options: [
-        "Providing a balanced, factual explanation.",
-        "Using objective language.",
-        "Stating opinions or taking a side.",
-        "Describing processes.",
-      ],
-      correct: 3,
-    },
-  ];
+  {
+    id: 1,
+    question: "What is the main purpose of an expository essay?",
+    options: [
+      "To express personal opinions on a topic.",
+      "To argue for one side of an issue.",
+      "To provide a balanced explanation and detailed information about a topic.",
+      "To persuade the reader to take action.",
+    ],
+    correct: 2,
+  },
+  {
+    id: 2,
+    question: "Which of the following best describes a thesis statement in an expository essay?",
+    options: [
+      "It argues one side of a debate.",
+      "It expresses personal opinion.",
+      "It is objective and uses statements like 'is.'",
+      "It suggests what should happen regarding the topic.",
+    ],
+    correct: 2,
+  },
+  {
+    id: 3,
+    question: "Which type of paragraph is not suitable for the body of an expository essay?",
+    options: [
+      "Description.",
+      "Definition.",
+      "Problem and solution.",
+      "Opinion and personal judgment.",
+    ],
+    correct: 3,
+  },
+  {
+    id: 4,
+    question: "What is included in the introduction of an expository essay?",
+    options: [
+      "A conclusion and judgment.",
+      "An evaluation of the topic.",
+      "An explanation of the thesis, topic relevance, and essay structure.",
+      "A list of opinions about the topic.",
+    ],
+    correct: 2,
+  },
+  {
+    id: 5,
+    question: "What should be avoided in an expository essay?",
+    options: [
+      "Providing a balanced, factual explanation.",
+      "Using objective language.",
+      "Stating opinions or taking a side.",
+      "Describing processes.",
+    ],
+    correct: 2,
+  },
+];
 
 const progressIncrement = 100 / questions.length;
 
@@ -79,9 +82,21 @@ const Level4Quiz = () => {
   const [progress, setProgress] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number | undefined }>({});
   const [showModal, setShowModal] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUserId(user.uid);
+      } else {
+        Alert.alert("Error", "User not logged in.");
+        router.push("/login");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleOptionClick = (index: number) => {
-    const correctAnswer = questions[currentQuestion].correct - 1;
     setAnswers({ ...answers, [currentQuestion]: index });
 
     if (currentQuestion === questions.length - 1) {
@@ -111,11 +126,33 @@ const Level4Quiz = () => {
     setShowModal(false);
   };
 
-  const handleReturnHome = () => {
+  const updateProgress = async () => {
+    if (!userId) return;
+    try {
+      const userDocRef = doc(firestore, "users", userId);
+      const userSnapshot = await getDoc(userDocRef);
+
+      if (userSnapshot.exists()) {
+        const progress = userSnapshot.data()?.progress || {};
+        progress["level_4"] = true;
+        progress["level_5"] = true; 
+
+        await updateDoc(userDocRef, { progress });
+      } else {
+        console.error("User document not found.");
+      }
+    } catch (error) {
+      console.error("Error updating progress:", error);
+    }
+  };
+
+  const handleReturnHome = async () => {
+    await updateProgress();
     router.push("/homepage");
   };
 
-  const handleNextLevel = () => {
+  const handleNextLevel = async () => {
+    await updateProgress();
     router.push("/level5");
   };
 
@@ -133,10 +170,10 @@ const Level4Quiz = () => {
 
       {/* Question Section */}
       <ScrollView contentContainerStyle={styles.quizContainer}>
-        <Text style={styles.title}>Quiz: Narrative Essay</Text>
+        <Text style={styles.title}>Quiz: Expository Essay</Text>
         <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
         {questions[currentQuestion].options.map((option, index) => {
-          const isCorrect = questions[currentQuestion].correct - 1 === index;
+          const isCorrect = questions[currentQuestion].correct === index;
           const isSelected = answers[currentQuestion] === index;
 
           return (
@@ -166,11 +203,6 @@ const Level4Quiz = () => {
         {currentQuestion < questions.length - 1 && (
           <TouchableOpacity style={styles.navButton} onPress={handleNext}>
             <Text style={styles.navButtonText}>Next</Text>
-          </TouchableOpacity>
-        )}
-        {currentQuestion === questions.length - 1 && (
-          <TouchableOpacity style={styles.navButton} onPress={() => setShowModal(true)}>
-            <Text style={styles.navButtonText}>Finish Quiz</Text>
           </TouchableOpacity>
         )}
       </View>
