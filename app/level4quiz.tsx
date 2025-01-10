@@ -26,7 +26,7 @@ const questions = [
       "To provide a balanced explanation and detailed information about a topic.",
       "To persuade the reader to take action.",
     ],
-    correct: 2,
+    correct: 3,
   },
   {
     id: 2,
@@ -37,7 +37,7 @@ const questions = [
       "It is objective and uses statements like 'is.'",
       "It suggests what should happen regarding the topic.",
     ],
-    correct: 2,
+    correct: 3,
   },
   {
     id: 3,
@@ -48,7 +48,7 @@ const questions = [
       "Problem and solution.",
       "Opinion and personal judgment.",
     ],
-    correct: 3,
+    correct: 4,
   },
   {
     id: 4,
@@ -59,7 +59,7 @@ const questions = [
       "An explanation of the thesis, topic relevance, and essay structure.",
       "A list of opinions about the topic.",
     ],
-    correct: 2,
+    correct: 3,
   },
   {
     id: 5,
@@ -70,9 +70,9 @@ const questions = [
       "Stating opinions or taking a side.",
       "Describing processes.",
     ],
-    correct: 2,
+    correct: 3,
   },
-];
+]; 
 
 const progressIncrement = 100 / questions.length;
 
@@ -85,9 +85,10 @@ const Level4Quiz = () => {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         setUserId(user.uid);
+        await fetchUserAnswers(user.uid);
       } else {
         Alert.alert("Error", "User not logged in.");
         router.push("/login");
@@ -96,12 +97,44 @@ const Level4Quiz = () => {
     return () => unsubscribe();
   }, []);
 
+  const fetchUserAnswers = async (uid: string) => {
+    try {
+      const userDocRef = doc(firestore, "users", uid);
+      const userSnapshot = await getDoc(userDocRef);
+      if (userSnapshot.exists()) {
+        const savedAnswers = userSnapshot.data()?.quizAnswers?.level_4 || {};
+        setAnswers(savedAnswers);
+        setProgress(Object.keys(savedAnswers).length * progressIncrement);
+      }
+    } catch (error) {
+      console.error("Error fetching user answers:", error);
+    }
+  };
+
+  const saveUserAnswer = async (questionIndex: number, answerIndex: number) => {
+    if (!userId) return;
+    try {
+      const userDocRef = doc(firestore, "users", userId);
+      const userSnapshot = await getDoc(userDocRef);
+      if (userSnapshot.exists()) {
+        const quizAnswers = userSnapshot.data()?.quizAnswers || {};
+        quizAnswers["level_4"] = {
+          ...(quizAnswers["level_4"] || {}),
+          [questionIndex]: answerIndex,
+        };
+        await updateDoc(userDocRef, { quizAnswers });
+      }
+    } catch (error) {
+      console.error("Error saving user answer:", error);
+    }
+  };
+
   const handleOptionClick = (index: number) => {
     setAnswers({ ...answers, [currentQuestion]: index });
+    saveUserAnswer(currentQuestion, index);
 
     if (currentQuestion === questions.length - 1) {
       setProgress(100);
-      setShowModal(true);
     } else {
       setProgress((prev) => prev + progressIncrement);
     }
@@ -135,7 +168,7 @@ const Level4Quiz = () => {
       if (userSnapshot.exists()) {
         const progress = userSnapshot.data()?.progress || {};
         progress["level_4"] = true;
-        progress["level_5"] = true; 
+        progress["level_5"] = true;
 
         await updateDoc(userDocRef, { progress });
       } else {
@@ -144,6 +177,10 @@ const Level4Quiz = () => {
     } catch (error) {
       console.error("Error updating progress:", error);
     }
+  };
+
+  const handleFinishQuiz = () => {
+    setShowModal(true);
   };
 
   const handleReturnHome = async () => {
@@ -158,9 +195,8 @@ const Level4Quiz = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push("/level4")} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.push("/homepage")} style={styles.backButton}>
           <Image source={require("../assets/x.png")} style={styles.backButtonImage} />
         </TouchableOpacity>
         <View style={styles.progressBarContainer}>
@@ -168,11 +204,10 @@ const Level4Quiz = () => {
         </View>
       </View>
 
-      {/* Question Section */}
       <ScrollView contentContainerStyle={styles.quizContainer}>
         <Text style={styles.title}>Quiz: Expository Essay</Text>
         <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
-        {questions[currentQuestion].options.map((option, index) => {
+        {questions[currentQuestion].options.map((option, index: number) => {
           const isCorrect = questions[currentQuestion].correct === index;
           const isSelected = answers[currentQuestion] === index;
 
@@ -193,21 +228,23 @@ const Level4Quiz = () => {
         })}
       </ScrollView>
 
-      {/* Navigation Buttons */}
       <View style={styles.navigation}>
         {currentQuestion > 0 && (
           <TouchableOpacity style={styles.navButton} onPress={handlePrevious}>
             <Text style={styles.navButtonText}>Previous</Text>
           </TouchableOpacity>
         )}
-        {currentQuestion < questions.length - 1 && (
+        {currentQuestion < questions.length - 1 ? (
           <TouchableOpacity style={styles.navButton} onPress={handleNext}>
             <Text style={styles.navButtonText}>Next</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.navButton} onPress={handleFinishQuiz}>
+            <Text style={styles.navButtonText}>Finish Quiz</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Modal */}
       {showModal && (
         <Modal transparent={true} animationType="slide" visible={showModal}>
           <View style={styles.modal}>

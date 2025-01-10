@@ -80,9 +80,10 @@ const Level1Quiz = () => {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         setUserId(user.uid);
+        await fetchUserAnswers(user.uid);
       } else {
         Alert.alert("Error", "User not logged in.");
         router.push("/login");
@@ -91,15 +92,35 @@ const Level1Quiz = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleOptionClick = (index: number) => {
-    const correctAnswer = questions[currentQuestion].correct - 1;
-    setAnswers({ ...answers, [currentQuestion]: index });
+  const fetchUserAnswers = async (uid: string) => {
+    try {
+      const userDocRef = doc(firestore, "users", uid);
+      const userSnapshot = await getDoc(userDocRef);
+      if (userSnapshot.exists()) {
+        const savedAnswers = userSnapshot.data()?.quizAnswers?.level_1 || {};
+        setAnswers(savedAnswers);
+        setProgress(Object.keys(savedAnswers).length * progressIncrement);
+      }
+    } catch (error) {
+      console.error("Error fetching user answers:", error);
+    }
+  };
 
-    if (currentQuestion === questions.length - 1) {
-      setProgress(100);
-      setShowModal(true);
-    } else {
-      setProgress((prev) => prev + progressIncrement);
+  const saveUserAnswer = async (questionIndex: number, answerIndex: number) => {
+    if (!userId) return;
+    try {
+      const userDocRef = doc(firestore, "users", userId);
+      const userSnapshot = await getDoc(userDocRef);
+      if (userSnapshot.exists()) {
+        const quizAnswers = userSnapshot.data()?.quizAnswers || {};
+        quizAnswers["level_1"] = {
+          ...(quizAnswers["level_1"] || {}),
+          [questionIndex]: answerIndex,
+        };
+        await updateDoc(userDocRef, { quizAnswers });
+      }
+    } catch (error) {
+      console.error("Error saving user answer:", error);
     }
   };
 
@@ -152,6 +173,22 @@ const Level1Quiz = () => {
     router.push("/level2");
   };
 
+  const handleOptionClick = (index: number) => {
+    const correctAnswer = questions[currentQuestion].correct - 1;
+    setAnswers({ ...answers, [currentQuestion]: index });
+    saveUserAnswer(currentQuestion, index);
+  
+    if (currentQuestion === questions.length - 1) {
+      setProgress(100);
+    } else {
+      setProgress((prev) => prev + progressIncrement);
+    }
+  };
+
+  const handleFinishQuiz = () => {
+    setShowModal(true);
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -163,15 +200,15 @@ const Level1Quiz = () => {
           <View style={[styles.progressBar, { width: `${progress}%` }]} />
         </View>
       </View>
-
+  
       {/* Question Section */}
       <ScrollView contentContainerStyle={styles.quizContainer}>
         <Text style={styles.title}>Quiz: Introduction to Essay</Text>
         <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
-        {questions[currentQuestion].options.map((option, index) => {
+        {questions[currentQuestion].options.map((option, index: number) => {
           const isCorrect = questions[currentQuestion].correct - 1 === index;
           const isSelected = answers[currentQuestion] === index;
-
+  
           return (
             <TouchableOpacity
               key={index}
@@ -188,7 +225,7 @@ const Level1Quiz = () => {
           );
         })}
       </ScrollView>
-
+  
       {/* Navigation Buttons */}
       <View style={styles.navigation}>
         {currentQuestion > 0 && (
@@ -196,13 +233,17 @@ const Level1Quiz = () => {
             <Text style={styles.navButtonText}>Previous</Text>
           </TouchableOpacity>
         )}
-        {currentQuestion < questions.length - 1 && (
+        {currentQuestion < questions.length - 1 ? (
           <TouchableOpacity style={styles.navButton} onPress={handleNext}>
             <Text style={styles.navButtonText}>Next</Text>
           </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.navButton} onPress={handleFinishQuiz}>
+            <Text style={styles.navButtonText}>Finish Quiz</Text>
+          </TouchableOpacity>
         )}
       </View>
-
+  
       {/* Modal */}
       {showModal && (
         <Modal transparent={true} animationType="slide" visible={showModal}>
@@ -228,7 +269,7 @@ const Level1Quiz = () => {
       )}
     </View>
   );
-};
+  };
 
 export default Level1Quiz;
 
@@ -353,5 +394,12 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: "#FFF",
     fontWeight: "bold",
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "red",
+    textAlign: "center",
+    marginTop: 20,
   },
 });
