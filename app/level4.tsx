@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,25 +7,39 @@ import {
   Image,
   ScrollView,
   Text,
+  Alert,
+  SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { WebView } from "react-native-webview";
+import { WebView, WebViewMessageEvent } from "react-native-webview";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 const Level4Page = () => {
   const router = useRouter();
+  const [videoWatched, setVideoWatched] = useState(false);
 
   const handleNext = () => {
-    router.push("/level4quiz");
+    if (videoWatched) {
+      router.push("/level4quiz");
+    } else {
+      Alert.alert("Watch Video", "You have to watch the video first.");
+    }
   };
 
   const handleBack = () => {
     router.push("/homepage");
   };
 
+  const handleWebViewMessage = (event: WebViewMessageEvent) => {
+    const message = event.nativeEvent.data;
+    if (message === "videoPlaying" || message === "videoEnded") {
+      setVideoWatched(true);
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
@@ -40,10 +54,40 @@ const Level4Page = () => {
       <View style={styles.videoContainer}>
         <WebView
           source={{
-            uri: "https://www.youtube.com/embed/1eP5Euwk7GU?si=nErWOBQMgyXCF_NW",
+            html: `
+              <html>
+                <body style="margin: 0; padding: 0; background-color: black;">
+                  <script src="https://www.youtube.com/iframe_api"></script>
+                  <div id="player"></div>
+                  <script>
+                    let player;
+                    function onYouTubeIframeAPIReady() {
+                      player = new YT.Player('player', {
+                        height: '100%',
+                        width: '100%',
+                        videoId: '1eP5Euwk7GU', // ID video
+                        events: {
+                          onStateChange: onPlayerStateChange,
+                        },
+                      });
+                    }
+
+                    function onPlayerStateChange(event) {
+                      if (event.data === YT.PlayerState.PLAYING) {
+                        window.ReactNativeWebView.postMessage('videoPlaying');
+                      } else if (event.data === YT.PlayerState.ENDED) {
+                        window.ReactNativeWebView.postMessage('videoEnded');
+                      }
+                    }
+                  </script>
+                </body>
+              </html>
+            `,
           }}
           style={styles.video}
-          allowsFullscreenVideo
+          javaScriptEnabled
+          domStorageEnabled
+          onMessage={handleWebViewMessage}
         />
       </View>
 
@@ -51,17 +95,17 @@ const Level4Page = () => {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Expository Essay</Text>
         <Text style={styles.summary}>
-            This video explains how to write an expository essay, highlighting key differences from argumentative essays. Unlike argumentative essays, which take a stance on an issue, expository essays focus on explaining, clarifying, and providing balanced information about a topic without expressing personal opinions. The expository essay structure includes an introduction, orientation, body, and conclusion. In the introduction, the writer presents the topic and thesis statement without suggesting actions. The orientation paragraph defines terms and concepts, while the body expands on the topic with various paragraph types, such as descriptions, definitions, comparisons, cause and effect, and real-life examples. Body paragraphs in expository essays should avoid opinions and judgments, providing factual analysis instead. Finally, the conclusion reiterates the topic's importance, restates the thesis, and reflects on its real-world implications. The video also offers downloadable templates with thesis examples and paragraph starters to assist in structuring an expository essay.
+          This video explains how to write an expository essay, highlighting key differences from argumentative essays. Unlike argumentative essays, which take a stance on an issue, expository essays focus on explaining, clarifying, and providing balanced information about a topic without expressing personal opinions. The expository essay structure includes an introduction, orientation, body, and conclusion. In the introduction, the writer presents the topic and thesis statement without suggesting actions. The orientation paragraph defines terms and concepts, while the body expands on the topic with various paragraph types, such as descriptions, definitions, comparisons, cause and effect, and real-life examples. Body paragraphs in expository essays should avoid opinions and judgments, providing factual analysis instead. Finally, the conclusion reiterates the topic's importance, restates the thesis, and reflects on its real-world implications. The video also offers downloadable templates with thesis examples and paragraph starters to assist in structuring an expository essay.
         </Text>
       </ScrollView>
 
       {/* Next Button */}
       <View style={styles.nextContainer}>
         <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
-          <Text style={styles.nextButtonText}>Complete Video</Text>
+          <Text style={styles.nextButtonText}>Continue to Quiz</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -71,15 +115,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFEFF",
-    padding: 20,
   },
   header: {
     marginBottom: 20,
     alignItems: "flex-start",
+    padding: 10,
   },
   backButton: {
     padding: 10,
-    zIndex: 1000,
   },
   backButtonImage: {
     width: 20,
@@ -96,6 +139,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    paddingHorizontal: 20,
     paddingBottom: 20,
   },
   title: {
@@ -104,7 +148,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: "#333",
     textAlign: "left",
-    fontFamily: "Italiana",
   },
   summary: {
     fontSize: 16,
@@ -115,6 +158,7 @@ const styles = StyleSheet.create({
   },
   nextContainer: {
     alignItems: "center",
+    padding: 20,
   },
   nextButton: {
     backgroundColor: "#006B49",

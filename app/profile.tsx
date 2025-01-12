@@ -10,6 +10,7 @@ import {
   Dimensions,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { auth } from "../config/firebaseConfig";
 import { updateProfile, updatePassword, signOut } from "firebase/auth";
@@ -82,7 +83,7 @@ const ProfilePage = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.profileWrapper}>
           <View style={styles.imageContainer}>
@@ -137,7 +138,7 @@ const ProfilePage = () => {
           </View>
         </View>
       </ScrollView>
-
+  
       {/* Navbar */}
       <View style={styles.navbar}>
         <TouchableOpacity
@@ -170,10 +171,7 @@ const ProfilePage = () => {
           <View style={styles.navIndicatorWrapper}>
             {activePage === "/profile" && <View style={styles.navIndicator} />}
           </View>
-          <Image
-            source={require("../assets/profile.png")}
-            style={styles.icon}
-          />
+          <Image source={require("../assets/profile.png")} style={styles.icon} />
           <Text
             style={[
               styles.navbarText,
@@ -184,8 +182,8 @@ const ProfilePage = () => {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
-  );
+    </SafeAreaView>
+  );  
 };
 
 const styles = StyleSheet.create({

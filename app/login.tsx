@@ -16,10 +16,9 @@ export default function Login() {
     }
 
     try {
-      // Gunakan Firebase Authentication untuk login
       await signInWithEmailAndPassword(auth, email, password);
       Alert.alert("Success", "Login successful! Redirecting to homepage...");
-      router.push("/homepage"); // Redirect ke homepage setelah login berhasil
+      router.push("/homepage"); 
     } catch (error) {
       if (error instanceof Error) {
         Alert.alert("Error", error.message);
@@ -33,9 +32,11 @@ export default function Login() {
     <View style={styles.container}>
       <View style={styles.welcomeSection}>
         <Text style={styles.welcomeTitle}>Welcome Back</Text>
-        <Text style={styles.welcomeMessage}>We're glad to see you again! Please log in to continue.</Text>
+        <Text style={styles.welcomeMessage}>
+          We're glad to see you again! Please log in to continue.
+        </Text>
       </View>
-
+  
       <View style={styles.loginSection}>
         <Text style={styles.header}>Log In</Text>
         <View style={styles.form}>
@@ -47,7 +48,7 @@ export default function Login() {
             onChangeText={setEmail}
             keyboardType="email-address"
           />
-
+  
           <Text style={styles.label}>Password</Text>
           <TextInput
             style={styles.input}
@@ -56,9 +57,14 @@ export default function Login() {
             onChangeText={setPassword}
             secureTextEntry
           />
-
-          <Button title="Log In" onPress={handleLogin} color="#006B49" />
+  
+          {/* Custom Log In Button */}
+          <TouchableOpacity onPress={handleLogin} style={styles.loginButton}>
+            <Text style={styles.loginButtonText}>Log In</Text>
+          </TouchableOpacity>
         </View>
+  
+        {/* Sign Up Prompt */}
         <Text style={styles.signupPrompt}>
           Don't have an account?{" "}
           <TouchableOpacity onPress={() => router.push("/register")}>
@@ -67,7 +73,7 @@ export default function Login() {
         </Text>
       </View>
     </View>
-  );
+  );  
 }
 
 const styles = StyleSheet.create({
@@ -106,6 +112,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
+  },
+  loginButton: {
+    backgroundColor: "#006B49", 
+    borderWidth: 2, 
+    borderColor: "#006B49",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  loginButtonText: {
+    color: "#FFF", 
+    fontSize: 16,
+    fontWeight: "bold",
   },
   header: {
     fontSize: 24,

@@ -45,13 +45,15 @@ export default function Register() {
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View style={styles.container}>
+        {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>Welcome to EssLab!</Text>
           <Text style={styles.welcomeMessage}>
             Unlock the power of words with EssLab. Join us today to start your journey in mastering the art of essay writing!
           </Text>
         </View>
-
+  
+        {/* Sign Up Section */}
         <View style={[styles.signupSection, { paddingBottom: screenHeight * 0.1 }]}>
           <Text style={styles.header}>Get Started</Text>
           <View style={styles.form}>
@@ -62,7 +64,7 @@ export default function Register() {
               value={name}
               onChangeText={setName}
             />
-
+  
             <Text style={styles.label}>Email</Text>
             <TextInput
               style={styles.input}
@@ -71,7 +73,7 @@ export default function Register() {
               onChangeText={setEmail}
               keyboardType="email-address"
             />
-
+  
             <Text style={styles.label}>Password</Text>
             <TextInput
               style={styles.input}
@@ -80,7 +82,7 @@ export default function Register() {
               onChangeText={setPassword}
               secureTextEntry
             />
-
+  
             <Text style={styles.label}>Confirm Password</Text>
             <TextInput
               style={styles.input}
@@ -89,9 +91,14 @@ export default function Register() {
               onChangeText={setConfirmPassword}
               secureTextEntry
             />
-
-            <Button title="Sign Up" onPress={handleSignup} color="#006B49" />
+  
+            {/* Custom Sign Up Button */}
+            <TouchableOpacity onPress={handleSignup} style={styles.signupButton}>
+              <Text style={styles.signupButtonText}>Sign Up</Text>
+            </TouchableOpacity>
           </View>
+  
+          {/* Login Prompt */}
           <Text style={styles.loginPrompt}>
             Already have an account?{" "}
             <TouchableOpacity onPress={() => router.push("login")}>
@@ -101,7 +108,7 @@ export default function Register() {
         </View>
       </View>
     </ScrollView>
-  );
+  );  
 }
 
 const styles = StyleSheet.create({
@@ -140,6 +147,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
+    paddingTop: 40,
+  },
+  signupButton: {
+    backgroundColor: "#006B49", 
+    borderWidth: 2, 
+    borderColor: "#006B49",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  signupButtonText: {
+    color: "#FFF", 
+    fontSize: 16,
+    fontWeight: "bold",
   },
   header: {
     fontSize: 24,

@@ -9,6 +9,7 @@ import {
   Alert,
   Dimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { auth, firestore } from "../config/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
@@ -94,21 +95,26 @@ const HomePage = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Welcome Card */}
         <View style={styles.welcomeCard}>
           <Text style={styles.welcomeTitle}>Welcome, {userName}!</Text>
           <Text style={styles.welcomeMessage}>
-            Discover the art of essay like never before. Whether you're a beginner
-            or looking to refine your writing, you're in the right place!
+            Discover the art of essay like never before. Whether you're a
+            beginner or looking to refine your writing, you're in the right
+            place!
           </Text>
           <Text style={styles.welcomeMessage}>
             Explore our roadmap of interactive levels, designed to take you
-            step-by-step through different essay styles. Ready to start your journey?
+            step-by-step through different essay styles. Ready to start your
+            journey?
           </Text>
           <View style={styles.imageContainer}>
-            <Image source={require("../assets/image.png")} style={styles.responsiveImage} />
+            <Image
+              source={require("../assets/image.png")}
+              style={styles.responsiveImage}
+            />
           </View>
         </View>
 
@@ -119,7 +125,9 @@ const HomePage = () => {
               <TouchableOpacity
                 style={[
                   styles.levelCircle,
-                  unlockedLevels.includes(level.level) ? styles.unlocked : styles.locked,
+                  unlockedLevels.includes(level.level)
+                    ? styles.unlocked
+                    : styles.locked,
                 ]}
                 onPress={() => handleLevelClick(level.level)}
               >
@@ -163,7 +171,10 @@ const HomePage = () => {
           <View style={styles.navIndicatorWrapper}>
             {activePage === "/profile" && <View style={styles.navIndicator} />}
           </View>
-          <Image source={require("../assets/profile.png")} style={styles.icon} />
+          <Image
+            source={require("../assets/profile.png")}
+            style={styles.icon}
+          />
           <Text
             style={[
               styles.navbarText,
@@ -174,7 +185,7 @@ const HomePage = () => {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

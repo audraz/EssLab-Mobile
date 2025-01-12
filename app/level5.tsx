@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,21 +7,34 @@ import {
   Image,
   ScrollView,
   Text,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { WebView } from "react-native-webview";
+import { WebView, WebViewMessageEvent } from "react-native-webview";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 const Level5Page = () => {
   const router = useRouter();
+  const [videoWatched, setVideoWatched] = useState(false);
 
   const handleNext = () => {
-    router.push("/level5quiz");
+    if (videoWatched) {
+      router.push("/level5quiz");
+    } else {
+      Alert.alert("Watch Video", "You have to start watching the video first.");
+    }
   };
 
   const handleBack = () => {
     router.push("/homepage");
+  };
+
+  const handleWebViewMessage = (event: WebViewMessageEvent) => {
+    const message = event.nativeEvent.data;
+    if (message === "videoPlaying" || message === "videoEnded") {
+      setVideoWatched(true);
+    }
   };
 
   return (
@@ -40,10 +53,39 @@ const Level5Page = () => {
       <View style={styles.videoContainer}>
         <WebView
           source={{
-            uri: "https://www.youtube.com/embed/1DltMnjPr1k?si=AvXZosN57h75bDcC",
+            html: `
+              <html>
+                <body style="margin: 0; padding: 0; background-color: black;">
+                  <script src="https://www.youtube.com/iframe_api"></script>
+                  <div id="player"></div>
+                  <script>
+                    let player;
+                    function onYouTubeIframeAPIReady() {
+                      player = new YT.Player('player', {
+                        height: '100%',
+                        width: '100%',
+                        videoId: '1DltMnjPr1k',
+                        events: {
+                          onStateChange: onPlayerStateChange,
+                        },
+                      });
+                    }
+                    function onPlayerStateChange(event) {
+                      if (event.data === YT.PlayerState.PLAYING) {
+                        window.ReactNativeWebView.postMessage('videoPlaying');
+                      } else if (event.data === YT.PlayerState.ENDED) {
+                        window.ReactNativeWebView.postMessage('videoEnded');
+                      }
+                    }
+                  </script>
+                </body>
+              </html>
+            `,
           }}
           style={styles.video}
-          allowsFullscreenVideo
+          onMessage={handleWebViewMessage}
+          javaScriptEnabled
+          domStorageEnabled
         />
       </View>
 
@@ -51,14 +93,28 @@ const Level5Page = () => {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Persuasive Essay</Text>
         <Text style={styles.summary}>
-            This video explains how to write a persuasive essay, which is used to express opinions and convince readers to agree with a specific viewpoint. Persuasive writing involves a clear claim, supported by reasons and backed up by evidence. The essay structure includes an introduction, body paragraphs, and a conclusion. In the introduction, the writer presents their claim, supported by the first reason and relevant evidence. Additional body paragraphs offer more reasons and evidence, and an optional counter-argument paragraph can strengthen the argument by addressing opposing views. The conclusion restates the claim, summarizes key reasons, and calls the reader to action. Key steps for writing a persuasive essay include identifying the audience, choosing a topic, stating a clear position, providing reasons, supporting these reasons with evidence, and organizing the writing effectively. Editing and revising are essential before sharing the final draft.
+          This video explains how to write a persuasive essay, which is used to
+          express opinions and convince readers to agree with a specific
+          viewpoint. Persuasive writing involves a clear claim, supported by
+          reasons and backed up by evidence. The essay structure includes an
+          introduction, body paragraphs, and a conclusion. In the introduction,
+          the writer presents their claim, supported by the first reason and
+          relevant evidence. Additional body paragraphs offer more reasons and
+          evidence, and an optional counter-argument paragraph can strengthen
+          the argument by addressing opposing views. The conclusion restates
+          the claim, summarizes key reasons, and calls the reader to action.
+          Key steps for writing a persuasive essay include identifying the
+          audience, choosing a topic, stating a clear position, providing
+          reasons, supporting these reasons with evidence, and organizing the
+          writing effectively. Editing and revising are essential before
+          sharing the final draft.
         </Text>
       </ScrollView>
 
       {/* Next Button */}
       <View style={styles.nextContainer}>
         <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
-          <Text style={styles.nextButtonText}>Complete Video</Text>
+          <Text style={styles.nextButtonText}>Continue to Quiz</Text>
         </TouchableOpacity>
       </View>
     </View>

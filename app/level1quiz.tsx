@@ -9,6 +9,7 @@ import {
   Modal,
   Image,
   Alert,
+  Platform
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth, firestore } from "../config/firebaseConfig";
@@ -165,6 +166,7 @@ const Level1Quiz = () => {
 
   const handleReturnHome = async () => {
     await updateProgress();
+    setShowModal(false); 
     router.push("/homepage");
   };
 
@@ -275,6 +277,7 @@ export default Level1Quiz;
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop: Platform.select({ ios: 50, android: 20 }),
     flex: 1,
     backgroundColor: "#FFFEFF",
     padding: 20,
@@ -361,6 +364,7 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: "#FFF",
     padding: 20,
+    marginHorizontal: 30, 
     borderRadius: 10,
     alignItems: "center",
   },

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,6 +7,8 @@ import {
   Image,
   ScrollView,
   Text,
+  Alert,
+  SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { WebView } from "react-native-webview";
@@ -15,24 +17,29 @@ const { width: screenWidth } = Dimensions.get("window");
 
 const Level2Page = () => {
   const router = useRouter();
+  const [videoWatched, setVideoWatched] = useState(false);
 
-  const handleNext = () => {
-    router.push("/level2quiz");
+  const handleWebViewMessage = (event : any) => {
+    const message = event.nativeEvent.data;
+    if (message === "videoPlaying") {
+      setVideoWatched(true);  
+    }
   };
 
-  const handleBack = () => {
-    router.push("/homepage");
+  const handleNext = () => {
+    if (videoWatched) {
+      router.push("/level2quiz"); 
+    } else {
+      Alert.alert("Watch Video", "You need to start the video first!"); 
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Image
-            source={require("../assets/x.png")}
-            style={styles.backButtonImage}
-          />
+        <TouchableOpacity onPress={() => router.push("/homepage")} style={styles.backButton}>
+          <Image source={require("../assets/x.png")} style={styles.backButtonImage} />
         </TouchableOpacity>
       </View>
 
@@ -40,10 +47,37 @@ const Level2Page = () => {
       <View style={styles.videoContainer}>
         <WebView
           source={{
-            uri: "https://www.youtube.com/embed/cXwEGwgGeuw?si=jwCasitBY0W7E545",
+            html: `
+              <html>
+                <body style="margin: 0; padding: 0; background-color: black;">
+                  <script src="https://www.youtube.com/iframe_api"></script>
+                  <div id="player"></div>
+                  <script>
+                    let player;
+                    function onYouTubeIframeAPIReady() {
+                      player = new YT.Player('player', {
+                        height: '100%',
+                        width: '100%',
+                        videoId: 'cXwEGwgGeuw', 
+                        events: {
+                          onStateChange: onPlayerStateChange,
+                        },
+                      });
+                    }
+                    function onPlayerStateChange(event) {
+                      if (event.data === YT.PlayerState.PLAYING) {
+                        window.ReactNativeWebView.postMessage('videoPlaying');
+                      }
+                    }
+                  </script>
+                </body>
+              </html>
+            `,
           }}
           style={styles.video}
-          allowsFullscreenVideo
+          onMessage={handleWebViewMessage} 
+          javaScriptEnabled
+          domStorageEnabled
         />
       </View>
 
@@ -72,10 +106,10 @@ const Level2Page = () => {
       {/* Next Button */}
       <View style={styles.nextContainer}>
         <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
-          <Text style={styles.nextButtonText}>Complete Video</Text>
+          <Text style={styles.nextButtonText}>Continue to Quiz</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -85,15 +119,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFEFF",
-    padding: 20,
   },
   header: {
     marginBottom: 20,
     alignItems: "flex-start",
+    padding: 10,
   },
   backButton: {
     padding: 10,
-    zIndex: 1000,
   },
   backButtonImage: {
     width: 20,
@@ -110,6 +143,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    paddingHorizontal: 20,
     paddingBottom: 20,
   },
   title: {
@@ -118,7 +152,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: "#333",
     textAlign: "left",
-    fontFamily: "Italiana",
   },
   summary: {
     fontSize: 16,
@@ -129,6 +162,7 @@ const styles = StyleSheet.create({
   },
   nextContainer: {
     alignItems: "center",
+    padding: 20,
   },
   nextButton: {
     backgroundColor: "#006B49",
