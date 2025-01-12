@@ -8,22 +8,23 @@ import {
   Alert,
   Image,
   Dimensions,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth } from "../config/firebaseConfig";
-import { updateProfile, updateEmail, updatePassword, signOut } from "firebase/auth";
+import { updateProfile, updatePassword, signOut } from "firebase/auth";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 const ProfilePage = () => {
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [activePage, setActivePage] = useState("/profile");
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         setName(user.displayName || "");
         setEmail(user.email || "");
@@ -37,7 +38,7 @@ const ProfilePage = () => {
 
   const handleSave = async () => {
     try {
-      if (!name && !email && !password) {
+      if (!name && !password) {
         Alert.alert("No Changes", "Please make some changes before saving.");
         return;
       }
@@ -45,11 +46,8 @@ const ProfilePage = () => {
       const user = auth.currentUser;
       if (!user) throw new Error("User not authenticated.");
 
-      if (name) {
+      if (name && name !== user.displayName) {
         await updateProfile(user, { displayName: name });
-      }
-      if (email) {
-        await updateEmail(user, email);
       }
       if (password) {
         await updatePassword(user, password);
@@ -68,6 +66,7 @@ const ProfilePage = () => {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      Alert.alert("Logged Out", "You have been logged out successfully.");
       router.push("/login");
     } catch (error) {
       Alert.alert(
@@ -77,91 +76,113 @@ const ProfilePage = () => {
     }
   };
 
+  const handleNavigation = (path: "/homepage" | "/profile") => {
+    setActivePage(path);
+    router.push(path);
+  };
+
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Image source={require("../assets/logo.png")} style={styles.logo} />
-        <View style={styles.nav}>
-          <TouchableOpacity
-            onPress={() => router.push("/homepage")}
-            style={styles.navButton}
-          >
-            <Image source={require("../assets/home.png")} style={styles.icon} />
-            <Text style={styles.navButtonText}>Home</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => router.push("/profile")}
-            style={[styles.navButton, styles.activeNavButton]}
-          >
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.profileWrapper}>
+          <View style={styles.imageContainer}>
             <Image
-              source={require("../assets/profile.png")}
-              style={styles.icon}
+              source={require("../assets/profile-img.png")}
+              style={styles.profileImage}
             />
-            <Text style={[styles.navButtonText, styles.activeNavButtonText]}>
-              Profile
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity
-          onPress={() => setMenuOpen(!menuOpen)}
-          style={styles.menuButton}
-        >
-          <Text style={styles.menuIcon}>☰</Text>
-        </TouchableOpacity>
-        {menuOpen && (
-          <View style={styles.menuDropdown}>
-            <TouchableOpacity onPress={handleLogout} style={styles.menuItem}>
-              <Text style={styles.menuItemText}>Logout</Text>
-            </TouchableOpacity>
           </View>
-        )}
-      </View>
+          <View style={styles.profileContainer}>
+            <Text style={styles.title}>Settings</Text>
+            <View style={styles.form}>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your name"
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Your email"
+                  value={email}
+                  editable={false}
+                  selectTextOnFocus={false}
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter new password"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                />
+              </View>
+              <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+                <Text style={styles.saveButtonText}>Save Changes</Text>
+              </TouchableOpacity>
+              {/* Tombol Logout */}
+              <TouchableOpacity
+                onPress={handleLogout}
+                style={styles.logoutButton}
+              >
+                <Text style={styles.logoutButtonText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
 
-      {/* Profile Form */}
-      <View style={styles.profileWrapper}>
-        <View style={styles.imageContainer}>
-          <Image
-            source={require("../assets/profile-img.png")}
-            style={styles.profileImage}
-          />
-        </View>
-        <View style={styles.profileContainer}>
-          <Text style={styles.title}>Settings</Text>
-          <View style={styles.form}>
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your name"
-                value={name}
-                onChangeText={setName}
-              />
-            </View>
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={setEmail}
-              />
-            </View>
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter new password"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-            </View>
-            <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-              <Text style={styles.saveButtonText}>Save Changes</Text>
-            </TouchableOpacity>
+      {/* Navbar */}
+      <View style={styles.navbar}>
+        <TouchableOpacity
+          onPress={() => handleNavigation("/homepage")}
+          style={[
+            styles.navbarButton,
+            activePage === "/homepage" && styles.activeNavItem,
+          ]}
+        >
+          <View style={styles.navIndicatorWrapper}>
+            {activePage === "/homepage" && <View style={styles.navIndicator} />}
           </View>
-        </View>
+          <Image source={require("../assets/home.png")} style={styles.icon} />
+          <Text
+            style={[
+              styles.navbarText,
+              activePage === "/homepage" && styles.activeNavText,
+            ]}
+          >
+            Home
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleNavigation("/profile")}
+          style={[
+            styles.navbarButton,
+            activePage === "/profile" && styles.activeNavItem,
+          ]}
+        >
+          <View style={styles.navIndicatorWrapper}>
+            {activePage === "/profile" && <View style={styles.navIndicator} />}
+          </View>
+          <Image
+            source={require("../assets/profile.png")}
+            style={styles.icon}
+          />
+          <Text
+            style={[
+              styles.navbarText,
+              activePage === "/profile" && styles.activeNavText,
+            ]}
+          >
+            Profile
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -169,80 +190,16 @@ const ProfilePage = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     backgroundColor: "#FFFEFF",
-    paddingBottom: 20,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#DDD",
-    width: "100%",
-  },
-  logo: {
-    width: 100,
-    height: 50,
-    resizeMode: "contain",
-  },
-  nav: {
-    flexDirection: "row",
-  },
-  navButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 10,
-    paddingBottom: 5,
-  },
-  navButtonText: {
-    marginLeft: 5,
-    color: "#006B49",
-    fontWeight: "bold",
-  },
-  activeNavButton: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#006B49",
-  },
-  activeNavButtonText: {
-    color: "#006B49",
-    fontWeight: "bold",
-  },
-  icon: {
-    width: 20,
-    height: 20,
-    resizeMode: "contain",
-  },
-  menuButton: {
-    padding: 10,
-  },
-  menuIcon: {
-    fontSize: 18,
-    color: "#006B49",
-  },
-  menuDropdown: {
-    position: "absolute",
-    top: 50,
-    right: 0,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    padding: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  menuItem: {
-    paddingVertical: 10,
-  },
-  menuItemText: {
-    color: "#FF4D4F",
-    fontWeight: "bold",
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 80,
   },
   profileWrapper: {
     alignItems: "center",
+    marginTop: 30,
   },
   imageContainer: {
     alignItems: "center",
@@ -294,6 +251,68 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: "#FFF",
+    fontWeight: "bold",
+  },
+  logoutButton: {
+    backgroundColor: "#FF4D4F",
+    padding: 15,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 15,
+  },
+  logoutButtonText: {
+    color: "#FFF",
+    fontWeight: "bold",
+  },
+  navbar: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#DDD",
+  },
+  navbarButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "column", 
+    flexBasis: screenWidth * 0.3, 
+  },
+  navbarText: {
+    marginTop: 5,
+    color: "#006B49",
+    fontSize: screenWidth * 0.035,
+  },
+  icon: {
+    width: screenWidth * 0.06,
+    height: screenWidth * 0.06,
+    resizeMode: "contain",
+  },
+  navIndicatorWrapper: {
+    position: "absolute",
+    top: -12, 
+    width: "100%", 
+    height: 4, 
+    alignItems: "center", 
+  },
+  navIndicator: {
+    width: "90%", 
+    height: "100%", 
+    backgroundColor: "#006B49", 
+    borderRadius: 2, 
+  },
+  activeNavItem: {
+    backgroundColor: "#D4EFDF", 
+    borderRadius: 15,
+    paddingVertical: 10,
+    width: screenWidth * 0.5, 
+  },
+  activeNavText: {
+    color: "#006B49",
     fontWeight: "bold",
   },
 });
