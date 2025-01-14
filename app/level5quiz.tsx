@@ -9,11 +9,11 @@ import {
   Modal,
   Image,
   Alert,
-  Platform
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth, firestore } from "../config/firebaseConfig";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -27,13 +27,13 @@ const questions = [
       "To convince the reader of a particular viewpoint",
       "To entertain the audience",
     ],
-    correct: 3,
+    correct: 2,
   },
   {
     id: 2,
     question: "Which of the following is NOT a key component of a persuasive essay?",
     options: ["Claim", "Evidence", "Character development", "Reasons"],
-    correct: 3,
+    correct: 2,
   },
   {
     id: 3,
@@ -44,7 +44,7 @@ const questions = [
       "In the middle",
       "In the counter-argument",
     ],
-    correct: 2,
+    correct: 1,
   },
   {
     id: 4,
@@ -55,7 +55,7 @@ const questions = [
       "Evidence, like facts or expert opinions",
       "Unrelated anecdotes",
     ],
-    correct: 3,
+    correct: 2,
   },
   {
     id: 5,
@@ -66,7 +66,7 @@ const questions = [
       "'Are you feeling stressed and overwhelmed?'",
       "'Traveling is good'",
     ],
-    correct: 3,
+    correct: 2,
   },
 ];
 
@@ -95,10 +95,11 @@ const Level5Quiz = () => {
 
   const fetchUserAnswers = async (uid: string) => {
     try {
-      const userDocRef = doc(firestore, "users", uid);
-      const userSnapshot = await getDoc(userDocRef);
-      if (userSnapshot.exists()) {
-        const savedAnswers = userSnapshot.data()?.quizAnswers?.level_5 || {};
+      const quizDocRef = doc(firestore, "quizProgress_level5", uid);
+      const quizSnapshot = await getDoc(quizDocRef);
+
+      if (quizSnapshot.exists()) {
+        const savedAnswers = quizSnapshot.data()?.answers || {};
         setAnswers(savedAnswers);
         setProgress(Object.keys(savedAnswers).length * progressIncrement);
       }
@@ -106,24 +107,40 @@ const Level5Quiz = () => {
       console.error("Error fetching user answers:", error);
     }
   };
-
   const saveUserAnswer = async (questionIndex: number, answerIndex: number) => {
     if (!userId) return;
+
     try {
+      const quizDocRef = doc(firestore, "quizProgress_level5", userId);
+      const quizSnapshot = await getDoc(quizDocRef);
+
+      if (quizSnapshot.exists()) {
+        const currentAnswers = quizSnapshot.data()?.answers || {};
+        currentAnswers[questionIndex] = answerIndex;
+        await updateDoc(quizDocRef, { answers: currentAnswers });
+      } else {
+        await setDoc(quizDocRef, {
+          userId: userId,
+          answers: { [questionIndex]: answerIndex },
+        });
+      }
+
+      setAnswers((prev) => ({ ...prev, [questionIndex]: answerIndex }));
+
       const userDocRef = doc(firestore, "users", userId);
       const userSnapshot = await getDoc(userDocRef);
+
       if (userSnapshot.exists()) {
-        const quizAnswers = userSnapshot.data()?.quizAnswers || {};
-        quizAnswers["level_5"] = {
-          ...(quizAnswers["level_5"] || {}),
-          [questionIndex]: answerIndex,
-        };
-        await updateDoc(userDocRef, { quizAnswers });
+        const currentProgress = userSnapshot.data()?.progress || {};
+        currentProgress.level_5 = true;
+        currentProgress.level_6 = true;
+        await updateDoc(userDocRef, { progress: currentProgress });
       }
     } catch (error) {
       console.error("Error saving user answer:", error);
     }
   };
+
 
   const handleOptionClick = (index: number) => {
     setAnswers({ ...answers, [currentQuestion]: index });
@@ -161,15 +178,11 @@ const Level5Quiz = () => {
       const userDocRef = doc(firestore, "users", userId);
       const userSnapshot = await getDoc(userDocRef);
 
-      if (userSnapshot.exists()) {
-        const progress = userSnapshot.data()?.progress || {};
-        progress["level_5"] = true;
-        progress["level_6"] = true;
+      const currentProgress = userSnapshot.data()?.progress || {};
+      currentProgress["level_5"] = true;
+      currentProgress["level_6"] = true;
 
-        await updateDoc(userDocRef, { progress });
-      } else {
-        console.error("User document not found.");
-      }
+      await updateDoc(userDocRef, { progress: currentProgress });
     } catch (error) {
       console.error("Error updating progress:", error);
     }
@@ -181,7 +194,7 @@ const Level5Quiz = () => {
 
   const handleReturnHome = async () => {
     await updateProgress();
-    setShowModal(false); 
+    setShowModal(false);
     router.push("/homepage");
   };
 
@@ -202,10 +215,10 @@ const Level5Quiz = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.quizContainer}>
-        <Text style={styles.title}>Quiz: Expository Essay</Text>
+        <Text style={styles.title}>Quiz: Persuasive Essay</Text>
         <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
         {questions[currentQuestion].options.map((option, index: number) => {
-          const isCorrect = questions[currentQuestion].correct === index;
+          const isCorrect = questions[currentQuestion].correct - 1 === index;
           const isSelected = answers[currentQuestion] === index;
 
           return (

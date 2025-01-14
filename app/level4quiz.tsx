@@ -9,11 +9,11 @@ import {
   Modal,
   Image,
   Alert,
-  Platform
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth, firestore } from "../config/firebaseConfig";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -27,7 +27,7 @@ const questions = [
       "To provide a balanced explanation and detailed information about a topic.",
       "To persuade the reader to take action.",
     ],
-    correct: 3,
+    correct: 2,
   },
   {
     id: 2,
@@ -38,7 +38,7 @@ const questions = [
       "It is objective and uses statements like 'is.'",
       "It suggests what should happen regarding the topic.",
     ],
-    correct: 3,
+    correct: 2,
   },
   {
     id: 3,
@@ -49,7 +49,7 @@ const questions = [
       "Problem and solution.",
       "Opinion and personal judgment.",
     ],
-    correct: 4,
+    correct: 3,
   },
   {
     id: 4,
@@ -60,7 +60,7 @@ const questions = [
       "An explanation of the thesis, topic relevance, and essay structure.",
       "A list of opinions about the topic.",
     ],
-    correct: 3,
+    correct: 2,
   },
   {
     id: 5,
@@ -71,9 +71,9 @@ const questions = [
       "Stating opinions or taking a side.",
       "Describing processes.",
     ],
-    correct: 3,
+    correct: 2,
   },
-]; 
+];
 
 const progressIncrement = 100 / questions.length;
 
@@ -100,10 +100,11 @@ const Level4Quiz = () => {
 
   const fetchUserAnswers = async (uid: string) => {
     try {
-      const userDocRef = doc(firestore, "users", uid);
-      const userSnapshot = await getDoc(userDocRef);
-      if (userSnapshot.exists()) {
-        const savedAnswers = userSnapshot.data()?.quizAnswers?.level_4 || {};
+      const quizDocRef = doc(firestore, "quizProgress_level4", uid);
+      const quizSnapshot = await getDoc(quizDocRef);
+
+      if (quizSnapshot.exists()) {
+        const savedAnswers = quizSnapshot.data()?.answers || {};
         setAnswers(savedAnswers);
         setProgress(Object.keys(savedAnswers).length * progressIncrement);
       }
@@ -114,16 +115,32 @@ const Level4Quiz = () => {
 
   const saveUserAnswer = async (questionIndex: number, answerIndex: number) => {
     if (!userId) return;
+
     try {
+      const quizDocRef = doc(firestore, "quizProgress_level4", userId);
+      const quizSnapshot = await getDoc(quizDocRef);
+
+      if (quizSnapshot.exists()) {
+        const currentAnswers = quizSnapshot.data()?.answers || {};
+        currentAnswers[questionIndex] = answerIndex;
+        await updateDoc(quizDocRef, { answers: currentAnswers });
+      } else {
+        await setDoc(quizDocRef, {
+          userId: userId,
+          answers: { [questionIndex]: answerIndex },
+        });
+      }
+
+      setAnswers((prev) => ({ ...prev, [questionIndex]: answerIndex }));
+
       const userDocRef = doc(firestore, "users", userId);
       const userSnapshot = await getDoc(userDocRef);
+
       if (userSnapshot.exists()) {
-        const quizAnswers = userSnapshot.data()?.quizAnswers || {};
-        quizAnswers["level_4"] = {
-          ...(quizAnswers["level_4"] || {}),
-          [questionIndex]: answerIndex,
-        };
-        await updateDoc(userDocRef, { quizAnswers });
+        const currentProgress = userSnapshot.data()?.progress || {};
+        currentProgress.level_4 = true;
+        currentProgress.level_5 = true;
+        await updateDoc(userDocRef, { progress: currentProgress });
       }
     } catch (error) {
       console.error("Error saving user answer:", error);
@@ -131,7 +148,6 @@ const Level4Quiz = () => {
   };
 
   const handleOptionClick = (index: number) => {
-    setAnswers({ ...answers, [currentQuestion]: index });
     saveUserAnswer(currentQuestion, index);
 
     if (currentQuestion === questions.length - 1) {
@@ -160,38 +176,16 @@ const Level4Quiz = () => {
     setShowModal(false);
   };
 
-  const updateProgress = async () => {
-    if (!userId) return;
-    try {
-      const userDocRef = doc(firestore, "users", userId);
-      const userSnapshot = await getDoc(userDocRef);
-
-      if (userSnapshot.exists()) {
-        const progress = userSnapshot.data()?.progress || {};
-        progress["level_4"] = true;
-        progress["level_5"] = true;
-
-        await updateDoc(userDocRef, { progress });
-      } else {
-        console.error("User document not found.");
-      }
-    } catch (error) {
-      console.error("Error updating progress:", error);
-    }
-  };
-
-  const handleFinishQuiz = () => {
+  const handleFinishQuiz = async () => {
     setShowModal(true);
   };
 
-  const handleReturnHome = async () => {
-    await updateProgress();
-    setShowModal(false); 
+  const handleReturnHome = () => {
+    setShowModal(false);
     router.push("/homepage");
   };
 
-  const handleNextLevel = async () => {
-    await updateProgress();
+  const handleNextLevel = () => {
     router.push("/level5");
   };
 
@@ -210,7 +204,7 @@ const Level4Quiz = () => {
         <Text style={styles.title}>Quiz: Expository Essay</Text>
         <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
         {questions[currentQuestion].options.map((option, index: number) => {
-          const isCorrect = questions[currentQuestion].correct === index;
+          const isCorrect = questions[currentQuestion].correct - 1 === index;
           const isSelected = answers[currentQuestion] === index;
 
           return (
@@ -259,7 +253,7 @@ const Level4Quiz = () => {
                   <Text style={styles.modalButtonText}>Back to Homepage</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.modalButton} onPress={handleNextLevel}>
-                  <Text style={styles.modalButtonText}>Go to Level 5</Text>
+                  <Text style={styles.modalButtonText}>Next Level</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.modalButton} onPress={handleRetry}>
                   <Text style={styles.modalButtonText}>Retry Quiz</Text>

@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth, firestore } from "../config/firebaseConfig";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -100,10 +100,11 @@ const Level3Quiz = () => {
 
   const fetchUserAnswers = async (uid: string) => {
     try {
-      const userDocRef = doc(firestore, "users", uid);
-      const userSnapshot = await getDoc(userDocRef);
-      if (userSnapshot.exists()) {
-        const savedAnswers = userSnapshot.data()?.quizAnswers?.level_3 || {};
+      const quizDocRef = doc(firestore, "quizProgress_level3", uid);
+      const quizSnapshot = await getDoc(quizDocRef);
+
+      if (quizSnapshot.exists()) {
+        const savedAnswers = quizSnapshot.data()?.answers || {};
         setAnswers(savedAnswers);
         setProgress(Object.keys(savedAnswers).length * progressIncrement);
       }
@@ -114,16 +115,32 @@ const Level3Quiz = () => {
 
   const saveUserAnswer = async (questionIndex: number, answerIndex: number) => {
     if (!userId) return;
+
     try {
+      const quizDocRef = doc(firestore, "quizProgress_level3", userId);
+      const quizSnapshot = await getDoc(quizDocRef);
+
+      if (quizSnapshot.exists()) {
+        const currentAnswers = quizSnapshot.data()?.answers || {};
+        currentAnswers[questionIndex] = answerIndex;
+        await updateDoc(quizDocRef, { answers: currentAnswers });
+      } else {
+        await setDoc(quizDocRef, {
+          userId: userId,
+          answers: { [questionIndex]: answerIndex },
+        });
+      }
+
+      setAnswers((prev) => ({ ...prev, [questionIndex]: answerIndex }));
+
       const userDocRef = doc(firestore, "users", userId);
       const userSnapshot = await getDoc(userDocRef);
+
       if (userSnapshot.exists()) {
-        const quizAnswers = userSnapshot.data()?.quizAnswers || {};
-        quizAnswers["level_3"] = {
-          ...(quizAnswers["level_3"] || {}),
-          [questionIndex]: answerIndex,
-        };
-        await updateDoc(userDocRef, { quizAnswers });
+        const currentProgress = userSnapshot.data()?.progress || {};
+        currentProgress.level_3 = true;
+        currentProgress.level_4 = true;
+        await updateDoc(userDocRef, { progress: currentProgress });
       }
     } catch (error) {
       console.error("Error saving user answer:", error);
@@ -131,7 +148,6 @@ const Level3Quiz = () => {
   };
 
   const handleOptionClick = (index: number) => {
-    setAnswers({ ...answers, [currentQuestion]: index });
     saveUserAnswer(currentQuestion, index);
 
     if (currentQuestion === questions.length - 1) {
@@ -160,38 +176,16 @@ const Level3Quiz = () => {
     setShowModal(false);
   };
 
-  const updateProgress = async () => {
-    if (!userId) return;
-    try {
-      const userDocRef = doc(firestore, "users", userId);
-      const userSnapshot = await getDoc(userDocRef);
-
-      if (userSnapshot.exists()) {
-        const progress = userSnapshot.data()?.progress || {};
-        progress["level_3"] = true;
-        progress["level_4"] = true;
-
-        await updateDoc(userDocRef, { progress });
-      } else {
-        console.error("User document not found.");
-      }
-    } catch (error) {
-      console.error("Error updating progress:", error);
-    }
-  };
-
-  const handleFinishQuiz = () => {
+  const handleFinishQuiz = async () => {
     setShowModal(true);
   };
 
-  const handleReturnHome = async () => {
-    await updateProgress();
-    setShowModal(false); 
+  const handleReturnHome = () => {
+    setShowModal(false);
     router.push("/homepage");
   };
 
-  const handleNextLevel = async () => {
-    await updateProgress();
+  const handleNextLevel = () => {
     router.push("/level4");
   };
 
@@ -210,7 +204,7 @@ const Level3Quiz = () => {
         <Text style={styles.title}>Quiz: Narrative Essay</Text>
         <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
         {questions[currentQuestion].options.map((option, index: number) => {
-          const isCorrect = questions[currentQuestion].correct === index;
+          const isCorrect = questions[currentQuestion].correct - 1 === index;
           const isSelected = answers[currentQuestion] === index;
 
           return (
@@ -259,7 +253,7 @@ const Level3Quiz = () => {
                   <Text style={styles.modalButtonText}>Back to Homepage</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.modalButton} onPress={handleNextLevel}>
-                  <Text style={styles.modalButtonText}>Go to Level 4</Text>
+                  <Text style={styles.modalButtonText}>Next Level</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.modalButton} onPress={handleRetry}>
                   <Text style={styles.modalButtonText}>Retry Quiz</Text>

@@ -9,11 +9,11 @@ import {
   Modal,
   Image,
   Alert,
-  Platform
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth, firestore } from "../config/firebaseConfig";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -100,10 +100,11 @@ const Level2Quiz = () => {
 
   const fetchUserAnswers = async (uid: string) => {
     try {
-      const userDocRef = doc(firestore, "users", uid);
-      const userSnapshot = await getDoc(userDocRef);
-      if (userSnapshot.exists()) {
-        const savedAnswers = userSnapshot.data()?.quizAnswers?.level_2 || {};
+      const quizDocRef = doc(firestore, "quizProgress_level2", uid);
+      const quizSnapshot = await getDoc(quizDocRef);
+
+      if (quizSnapshot.exists()) {
+        const savedAnswers = quizSnapshot.data()?.answers || {};
         setAnswers(savedAnswers);
         setProgress(Object.keys(savedAnswers).length * progressIncrement);
       }
@@ -114,16 +115,32 @@ const Level2Quiz = () => {
 
   const saveUserAnswer = async (questionIndex: number, answerIndex: number) => {
     if (!userId) return;
+
     try {
+      const quizDocRef = doc(firestore, "quizProgress_level2", userId);
+      const quizSnapshot = await getDoc(quizDocRef);
+
+      if (quizSnapshot.exists()) {
+        const currentAnswers = quizSnapshot.data()?.answers || {};
+        currentAnswers[questionIndex] = answerIndex;
+        await updateDoc(quizDocRef, { answers: currentAnswers });
+      } else {
+        await setDoc(quizDocRef, {
+          userId: userId,
+          answers: { [questionIndex]: answerIndex },
+        });
+      }
+
+      setAnswers((prev) => ({ ...prev, [questionIndex]: answerIndex }));
+
       const userDocRef = doc(firestore, "users", userId);
       const userSnapshot = await getDoc(userDocRef);
+
       if (userSnapshot.exists()) {
-        const quizAnswers = userSnapshot.data()?.quizAnswers || {};
-        quizAnswers["level_2"] = {
-          ...(quizAnswers["level_2"] || {}),
-          [questionIndex]: answerIndex,
-        };
-        await updateDoc(userDocRef, { quizAnswers });
+        const currentProgress = userSnapshot.data()?.progress || {};
+        currentProgress.level_2 = true;
+        currentProgress.level_3 = true;
+        await updateDoc(userDocRef, { progress: currentProgress });
       }
     } catch (error) {
       console.error("Error saving user answer:", error);
@@ -131,7 +148,6 @@ const Level2Quiz = () => {
   };
 
   const handleOptionClick = (index: number) => {
-    setAnswers({ ...answers, [currentQuestion]: index });
     saveUserAnswer(currentQuestion, index);
 
     if (currentQuestion === questions.length - 1) {
@@ -160,45 +176,23 @@ const Level2Quiz = () => {
     setShowModal(false);
   };
 
-  const updateProgress = async () => {
-    if (!userId) return;
-    try {
-      const userDocRef = doc(firestore, "users", userId);
-      const userSnapshot = await getDoc(userDocRef);
-
-      if (userSnapshot.exists()) {
-        const progress = userSnapshot.data()?.progress || {};
-        progress["level_2"] = true;
-        progress["level_3"] = true;
-
-        await updateDoc(userDocRef, { progress });
-      } else {
-        console.error("User document not found.");
-      }
-    } catch (error) {
-      console.error("Error updating progress:", error);
-    }
-  };
-
-  const handleFinishQuiz = () => {
+  const handleFinishQuiz = async () => {
     setShowModal(true);
   };
 
-  const handleReturnHome = async () => {
-    await updateProgress();
-    setShowModal(false); 
+  const handleReturnHome = () => {
+    setShowModal(false);
     router.push("/homepage");
   };
 
-  const handleNextLevel = async () => {
-    await updateProgress();
+  const handleNextLevel = () => {
     router.push("/level3");
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push("/level2")} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.push("/homepage")} style={styles.backButton}>
           <Image source={require("../assets/x.png")} style={styles.backButtonImage} />
         </TouchableOpacity>
         <View style={styles.progressBarContainer}>
@@ -207,10 +201,10 @@ const Level2Quiz = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.quizContainer}>
-        <Text style={styles.title}>Quiz: Descriptive Essay</Text>
+        <Text style={styles.title}>Quiz: Descriptive Writing</Text>
         <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
         {questions[currentQuestion].options.map((option, index: number) => {
-          const isCorrect = questions[currentQuestion].correct === index;
+          const isCorrect = questions[currentQuestion].correct - 1 === index;
           const isSelected = answers[currentQuestion] === index;
 
           return (
@@ -259,7 +253,7 @@ const Level2Quiz = () => {
                   <Text style={styles.modalButtonText}>Back to Homepage</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.modalButton} onPress={handleNextLevel}>
-                  <Text style={styles.modalButtonText}>Go to Level 3</Text>
+                  <Text style={styles.modalButtonText}>Next Level</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.modalButton} onPress={handleRetry}>
                   <Text style={styles.modalButtonText}>Retry Quiz</Text>

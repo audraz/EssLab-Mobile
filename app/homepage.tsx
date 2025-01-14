@@ -55,16 +55,14 @@ const HomePage = () => {
         if (userDoc.exists()) {
           const progress = userDoc.data()?.progress || {};
           const unlocked = Object.keys(progress)
-            .filter((key) => progress[key])
+            .filter((key) => progress[key] === true)
             .map((key) => parseInt(key.split("_")[1], 10));
           setUnlockedLevels([1, ...unlocked]);
-        } else {
-          console.error("No user progress found in Firestore.");
         }
       } catch (error) {
         console.error("Error fetching user progress:", error);
       }
-    };
+    };      
 
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {

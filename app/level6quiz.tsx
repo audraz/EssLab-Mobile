@@ -9,69 +9,69 @@ import {
   Modal,
   Image,
   Alert,
-  Platform
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { auth, firestore } from "../config/firebaseConfig";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 const questions = [
   {
     id: 1,
-    question: "What is the purpose of an argumentative essay?",
+    question: "What is the main purpose of an argumentative essay?",
     options: [
-      "To tell a story",
-      "To explore unrelated topics",
-      "To present and support a viewpoint with arguments and counter-arguments",
-      "To write a summary",
+      "To entertain readers",
+      "To argue a specific point or position",
+      "To describe an event",
+      "To share personal experiences",
     ],
-    correct: 3,
+    correct: 1,
   },
   {
     id: 2,
-    question: "What is a common structure for a five-paragraph argumentative essay?",
+    question: "Which of the following is a characteristic of an argumentative essay?",
     options: [
-      "Introduction, one body paragraph, and a conclusion",
-      "Introduction, two body paragraphs, and a conclusion",
-      "Introduction, three body paragraphs, and a conclusion",
-      "Conclusion, three body paragraphs, and an introduction",
+      "It uses emotional language to persuade readers.",
+      "It avoids stating a clear thesis statement.",
+      "It presents evidence and counterarguments.",
+      "It focuses solely on storytelling.",
     ],
-    correct: 3,
+    correct: 2,
   },
   {
     id: 3,
-    question: "What does analyzing the essay question help you determine?",
+    question: "What should the conclusion of an argumentative essay include?",
     options: [
-      "The answer to the question",
-      "The structure and requirements for the essay",
-      "The length of the introduction only",
-      "The exact words to use in the essay",
+      "A summary of evidence and restating the thesis",
+      "A list of references used",
+      "An unrelated anecdote",
+      "A question for readers to ponder",
     ],
-    correct: 2,
+    correct: 0,
   },
   {
     id: 4,
-    question: "Why is it helpful to plan an essay before writing?",
+    question: "What is the role of a counterargument in an argumentative essay?",
     options: [
-      "To reduce the amount of writing needed",
-      "To ensure the arguments are organized and coherent",
-      "To avoid writing a conclusion",
-      "To make the essay shorter",
+      "To weaken the main thesis",
+      "To present opposing viewpoints and refute them",
+      "To confuse readers",
+      "To avoid discussing opposing points",
     ],
-    correct: 2,
+    correct: 1,
   },
   {
     id: 5,
-    question: "What should each body paragraph begin with?",
+    question: "Which of the following is an example of strong evidence in an argumentative essay?",
     options: [
-      "A counter-argument",
-      "A concluding statement",
-      "A random idea",
-      "A topic sentence summarizing the paragraph",
+      "Personal anecdotes",
+      "Expert opinions and factual data",
+      "Speculative ideas",
+      "Hypothetical scenarios",
     ],
-    correct: 4,
+    correct: 1,
   },
 ];
 
@@ -100,10 +100,10 @@ const Level6Quiz = () => {
 
   const fetchUserAnswers = async (uid: string) => {
     try {
-      const userDocRef = doc(firestore, "users", uid);
-      const userSnapshot = await getDoc(userDocRef);
-      if (userSnapshot.exists()) {
-        const savedAnswers = userSnapshot.data()?.quizAnswers?.level_6 || {};
+      const quizDocRef = doc(firestore, "quizProgress", uid);
+      const quizSnapshot = await getDoc(quizDocRef);
+      if (quizSnapshot.exists()) {
+        const savedAnswers = quizSnapshot.data()?.answers?.level_6 || {};
         setAnswers(savedAnswers);
         setProgress(Object.keys(savedAnswers).length * progressIncrement);
       }
@@ -115,16 +115,21 @@ const Level6Quiz = () => {
   const saveUserAnswer = async (questionIndex: number, answerIndex: number) => {
     if (!userId) return;
     try {
-      const userDocRef = doc(firestore, "users", userId);
-      const userSnapshot = await getDoc(userDocRef);
-      if (userSnapshot.exists()) {
-        const quizAnswers = userSnapshot.data()?.quizAnswers || {};
-        quizAnswers["level_6"] = {
-          ...(quizAnswers["level_6"] || {}),
-          [questionIndex]: answerIndex,
-        };
-        await updateDoc(userDocRef, { quizAnswers });
+      const quizDocRef = doc(firestore, "quizProgress", userId);
+      const quizSnapshot = await getDoc(quizDocRef);
+
+      let currentAnswers: Record<string, Record<number, number>> = {};
+
+      if (quizSnapshot.exists()) {
+        currentAnswers = quizSnapshot.data()?.answers || {};
       }
+
+      currentAnswers["level_6"] = {
+        ...(currentAnswers["level_6"] || {}),
+        [questionIndex]: answerIndex,
+      };
+
+      await setDoc(quizDocRef, { answers: currentAnswers }, { merge: true });
     } catch (error) {
       console.error("Error saving user answer:", error);
     }
@@ -164,8 +169,8 @@ const Level6Quiz = () => {
     setShowModal(true);
   };
 
-  const handleReturnHome = async () => {
-    setShowModal(false); 
+  const handleReturnHome = () => {
+    setShowModal(false);
     router.push("/homepage");
   };
 
@@ -181,10 +186,10 @@ const Level6Quiz = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.quizContainer}>
-        <Text style={styles.title}>Quiz: Expository Essay</Text>
+        <Text style={styles.title}>Quiz: Argumentative Essay</Text>
         <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
         {questions[currentQuestion].options.map((option, index: number) => {
-          const isCorrect = questions[currentQuestion].correct === index;
+          const isCorrect = questions[currentQuestion].correct - 1 === index;
           const isSelected = answers[currentQuestion] === index;
 
           return (
@@ -227,7 +232,7 @@ const Level6Quiz = () => {
             <View style={styles.modalContent}>
               <Image source={require("../assets/popup-img.png")} style={styles.popupImage} />
               <Text style={styles.modalTitle}>Congratulations!</Text>
-              <Text style={styles.modalText}>You have completed Level 6 Quiz!</Text>
+              <Text style={styles.modalText}>You have completed the final level of the quiz!</Text>
               <View style={styles.modalButtons}>
                 <TouchableOpacity style={styles.modalButton} onPress={handleReturnHome}>
                   <Text style={styles.modalButtonText}>Back to Homepage</Text>

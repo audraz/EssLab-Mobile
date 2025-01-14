@@ -10,18 +10,26 @@ export default function Login() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!email.trim() || !password.trim()) {
       Alert.alert("Validation Error", "Email and password are required!");
       return;
     }
-
+  
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email.trim(), password.trim());
       Alert.alert("Success", "Login successful! Redirecting to homepage...");
-      router.push("/homepage"); 
+      router.push("/homepage");
     } catch (error) {
       if (error instanceof Error) {
-        Alert.alert("Error", error.message);
+        if (error.message.includes("auth/invalid-email")) {
+          Alert.alert("Login Failed", "Invalid email format.");
+        } else if (error.message.includes("auth/user-not-found")) {
+          Alert.alert("Login Failed", "No user found with this email.");
+        } else if (error.message.includes("auth/wrong-password")) {
+          Alert.alert("Login Failed", "Incorrect password.");
+        } else {
+          Alert.alert("Error", error.message);
+        }
       } else {
         Alert.alert("Error", "An unknown error occurred during login.");
       }
