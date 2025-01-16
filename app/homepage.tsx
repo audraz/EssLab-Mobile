@@ -62,7 +62,7 @@ const HomePage = () => {
       } catch (error) {
         console.error("Error fetching user progress:", error);
       }
-    };      
+    };
 
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
@@ -94,6 +94,11 @@ const HomePage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Home</Text>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Welcome Card */}
         <View style={styles.welcomeCard}>
@@ -194,7 +199,20 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingBottom: 80, 
+    paddingBottom: 80,
+  },
+  header: {
+    backgroundColor: "#FFFFFF", 
+    padding: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomWidth: 1, 
+    borderBottomColor: "#DDD", 
+  },
+  headerTitle: {
+    fontSize: screenWidth * 0.05,
+    color: "#000000", 
+    fontWeight: "bold",
   },
   welcomeCard: {
     backgroundColor: "#FFFFFF",
@@ -279,8 +297,8 @@ const styles = StyleSheet.create({
   navbarButton: {
     alignItems: "center",
     justifyContent: "center",
-    flexDirection: "column", 
-    flexBasis: screenWidth * 0.3, 
+    flexDirection: "column",
+    flexBasis: screenWidth * 0.3,
   },
   navbarText: {
     marginTop: 5,
@@ -294,22 +312,22 @@ const styles = StyleSheet.create({
   },
   navIndicatorWrapper: {
     position: "absolute",
-    top: -12, 
-    width: "100%", 
-    height: 4, 
-    alignItems: "center", 
+    top: -12,
+    width: "100%",
+    height: 4,
+    alignItems: "center",
   },
   navIndicator: {
-    width: "90%", 
-    height: "100%", 
-    backgroundColor: "#006B49", 
-    borderRadius: 2, 
+    width: "90%",
+    height: "100%",
+    backgroundColor: "#006B49",
+    borderRadius: 2,
   },
   activeNavItem: {
-    backgroundColor: "#D4EFDF", 
+    backgroundColor: "#D4EFDF",
     borderRadius: 15,
     paddingVertical: 10,
-    width: screenWidth * 0.5, 
+    width: screenWidth * 0.5,
   },
   activeNavText: {
     color: "#006B49",

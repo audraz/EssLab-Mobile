@@ -14,8 +14,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { auth } from "../config/firebaseConfig";
 import { updateProfile, updatePassword, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { firestore } from "../config/firebaseConfig";
+import * as ImagePicker from "expo-image-picker";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -24,18 +25,21 @@ const ProfilePage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [activePage, setActivePage] = useState("/profile");
 
   useEffect(() => {
     const fetchUserData = async (userId: string) => {
       try {
-        const userDoc = doc(firestore, "users", userId); 
+        const userDoc = doc(firestore, "users", userId);
         const docSnap = await getDoc(userDoc);
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
-          setName(userData.name || ""); 
-          setEmail(userData.email || ""); 
+          setName(userData.name || "");
+          setEmail(userData.email || "");
+          setProfileImage(userData.profileImage || null);
         } else {
           console.error("No user document found!");
         }
@@ -46,7 +50,7 @@ const ProfilePage = () => {
 
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        fetchUserData(user.uid); 
+        fetchUserData(user.uid);
       } else {
         Alert.alert("Not Logged In", "You need to log in first.");
         router.push("/login");
@@ -63,6 +67,11 @@ const ProfilePage = () => {
         return;
       }
 
+      if (password !== confirmPassword) {
+        Alert.alert("Password Mismatch", "Passwords do not match.");
+        return;
+      }
+
       const user = auth.currentUser;
       if (!user) throw new Error("User not authenticated.");
 
@@ -73,8 +82,15 @@ const ProfilePage = () => {
         await updatePassword(user, password);
       }
 
+      const userDoc = doc(firestore, "users", user.uid);
+      await updateDoc(userDoc, {
+        name: name || user.displayName,
+        profileImage: profileImage,
+      });
+
       Alert.alert("Success", "Profile updated successfully!");
       setPassword("");
+      setConfirmPassword("");
     } catch (error) {
       Alert.alert(
         "Error",
@@ -96,6 +112,27 @@ const ProfilePage = () => {
     }
   };
 
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permissionResult.granted) {
+      Alert.alert("Permission Denied", "You need to allow permission to upload a photo.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      console.log("Image URI:", result.assets[0].uri); 
+      setProfileImage(result.assets[0].uri);
+    }
+  };
+
   const handleNavigation = (path: "/homepage" | "/profile") => {
     setActivePage(path);
     router.push(path);
@@ -103,14 +140,27 @@ const ProfilePage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Profile</Text>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.profileWrapper}>
-          <View style={styles.imageContainer}>
+          {/* Profile Image */}
+          <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
             <Image
-              source={require("../assets/profile-img.png")}
+              source={
+                profileImage
+                  ? { uri: profileImage + "?time=" + new Date().getTime() }
+                  : require("../assets/default-profile.png")
+              }
               style={styles.profileImage}
+              resizeMode="cover"
             />
-          </View>
+            <Text style={styles.changePhotoText}>Change Photo</Text>
+          </TouchableOpacity>
+
           <View style={styles.profileContainer}>
             <Text style={styles.title}>Settings</Text>
             <View style={styles.form}>
@@ -121,6 +171,7 @@ const ProfilePage = () => {
                   placeholder="Enter your name"
                   value={name}
                   onChangeText={setName}
+                  placeholderTextColor="#000"
                 />
               </View>
               <View style={styles.formGroup}>
@@ -131,16 +182,29 @@ const ProfilePage = () => {
                   value={email}
                   editable={false}
                   selectTextOnFocus={false}
+                  placeholderTextColor="#000"
                 />
               </View>
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Password</Text>
+                <Text style={styles.label}>Change Password</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Enter new password"
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
+                  placeholderTextColor="#888"
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Confirm Password</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirm new password"
+                  secureTextEntry
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholderTextColor="#888"
                 />
               </View>
               <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
@@ -166,9 +230,6 @@ const ProfilePage = () => {
             activePage === "/homepage" && styles.activeNavItem,
           ]}
         >
-          <View style={styles.navIndicatorWrapper}>
-            {activePage === "/homepage" && <View style={styles.navIndicator} />}
-          </View>
           <Image source={require("../assets/home.png")} style={styles.icon} />
           <Text
             style={[
@@ -186,9 +247,6 @@ const ProfilePage = () => {
             activePage === "/profile" && styles.activeNavItem,
           ]}
         >
-          <View style={styles.navIndicatorWrapper}>
-            {activePage === "/profile" && <View style={styles.navIndicator} />}
-          </View>
           <Image source={require("../assets/profile.png")} style={styles.icon} />
           <Text
             style={[
@@ -213,6 +271,19 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 80,
   },
+  header: {
+    backgroundColor: "#FFFFFF",
+    padding: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
+  },
+  headerTitle: {
+    fontSize: screenWidth * 0.05,
+    color: "#000000",
+    fontWeight: "bold",
+  },
   profileWrapper: {
     alignItems: "center",
     marginTop: 30,
@@ -225,15 +296,9 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    resizeMode: "contain",
   },
   profileContainer: {
-    backgroundColor: "#FFF",
     padding: 20,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     width: screenWidth * 0.9,
   },
   title: {
@@ -254,16 +319,18 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#CCC",
-    borderRadius: 8,
-    padding: 10,
+    paddingVertical: 10,
+    fontSize: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#CCC",
+    color: "#000",
   },
   saveButton: {
     backgroundColor: "#006B49",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
+    marginTop: 20,
   },
   saveButtonText: {
     color: "#FFF",
@@ -295,8 +362,8 @@ const styles = StyleSheet.create({
   navbarButton: {
     alignItems: "center",
     justifyContent: "center",
-    flexDirection: "column", 
-    flexBasis: screenWidth * 0.3, 
+    flexDirection: "column",
+    flexBasis: screenWidth * 0.3,
   },
   navbarText: {
     marginTop: 5,
@@ -308,28 +375,27 @@ const styles = StyleSheet.create({
     height: screenWidth * 0.06,
     resizeMode: "contain",
   },
-  navIndicatorWrapper: {
-    position: "absolute",
-    top: -12, 
-    width: "100%", 
-    height: 4, 
-    alignItems: "center", 
-  },
   navIndicator: {
-    width: "90%", 
-    height: "100%", 
-    backgroundColor: "#006B49", 
-    borderRadius: 2, 
+    width: "90%",
+    height: 4,
+    backgroundColor: "#006B49",
+    borderRadius: 2,
   },
   activeNavItem: {
-    backgroundColor: "#D4EFDF", 
+    backgroundColor: "#D4EFDF",
     borderRadius: 15,
     paddingVertical: 10,
-    width: screenWidth * 0.5, 
   },
   activeNavText: {
     color: "#006B49",
     fontWeight: "bold",
+  },
+  changePhotoText: {
+    marginTop: 8,
+    color: "#006B49",
+    fontSize: 14,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
 
