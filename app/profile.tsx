@@ -14,6 +14,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { auth } from "../config/firebaseConfig";
 import { updateProfile, updatePassword, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { firestore } from "../config/firebaseConfig";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -25,17 +27,34 @@ const ProfilePage = () => {
   const [activePage, setActivePage] = useState("/profile");
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    const fetchUserData = async (userId: string) => {
+      try {
+        const userDoc = doc(firestore, "users", userId); 
+        const docSnap = await getDoc(userDoc);
+
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setName(userData.name || ""); 
+          setEmail(userData.email || ""); 
+        } else {
+          console.error("No user document found!");
+        }
+      } catch (error) {
+        console.error("Error fetching user data from Firestore:", error);
+      }
+    };
+
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        setName(user.displayName || "");
-        setEmail(user.email || "");
+        fetchUserData(user.uid); 
       } else {
         Alert.alert("Not Logged In", "You need to log in first.");
         router.push("/login");
       }
     });
+
     return unsubscribe;
-  }, []);
+  }, [router]);
 
   const handleSave = async () => {
     try {
@@ -127,7 +146,6 @@ const ProfilePage = () => {
               <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
                 <Text style={styles.saveButtonText}>Save Changes</Text>
               </TouchableOpacity>
-              {/* Tombol Logout */}
               <TouchableOpacity
                 onPress={handleLogout}
                 style={styles.logoutButton}
@@ -138,7 +156,7 @@ const ProfilePage = () => {
           </View>
         </View>
       </ScrollView>
-  
+
       {/* Navbar */}
       <View style={styles.navbar}>
         <TouchableOpacity
@@ -183,7 +201,7 @@ const ProfilePage = () => {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
-  );  
+  );
 };
 
 const styles = StyleSheet.create({
