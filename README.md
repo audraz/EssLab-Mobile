@@ -30,3 +30,7 @@ assets: Berisi file gambar, seperti ikon navbar dan default profile picture.
 config: File konfigurasi Firebase untuk menghubungkan aplikasi dengan backend Firebase.
 styles: File CSS modular untuk styling setiap halaman.
 components: Komponen UI yang dapat digunakan kembali.
+
+### II3140 - Pengembangan Aplikasi Web dan Mobile
+#### 18222106/Audra Zelvania
+#### 18222125/Sekar Anindita
