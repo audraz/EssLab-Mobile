@@ -22,30 +22,39 @@ export default function Login() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Validation Error", "Email and password are required!");
+      Alert.alert("Login Error", "Email and password are required!");
       return;
     }
   
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password.trim());
-      Alert.alert("Success", "Login successful! Redirecting to homepage...");
+      Alert.alert("Login Successful", "Welcome back! Redirecting to the homepage...");
       router.push("/homepage");
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.message.includes("auth/invalid-email")) {
-          Alert.alert("Login Failed", "Invalid email format.");
-        } else if (error.message.includes("auth/user-not-found")) {
-          Alert.alert("Login Failed", "No user found with this email.");
-        } else if (error.message.includes("auth/wrong-password")) {
-          Alert.alert("Login Failed", "Incorrect password.");
-        } else {
-          Alert.alert("Error", error.message);
+      if (error instanceof Error && 'code' in error) {
+        const firebaseError = error as { code: string };
+  
+        switch (firebaseError.code) {
+          case "auth/invalid-email":
+            Alert.alert("Login Failed", "Invalid email format. Please check your email.");
+            break;
+          case "auth/user-not-found":
+            Alert.alert("Login Failed", "No account found with this email. Please sign up.");
+            break;
+          case "auth/wrong-password":
+            Alert.alert("Login Failed", "Incorrect password. Please try again.");
+            break;
+          case "auth/invalid-credential":
+            Alert.alert("Login Failed", "Invalid email or password. Please try again.");
+            break;
+          default:
+            Alert.alert("Error", "An error occurred during login. Please try again later.");
         }
       } else {
-        Alert.alert("Error", "An unknown error occurred during login.");
+        Alert.alert("Unknown Error", "An unexpected error occurred. Please contact support.");
       }
     }
-  };
+  };    
 
   return (
     <View style={styles.container}>

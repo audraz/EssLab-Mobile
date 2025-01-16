@@ -56,7 +56,6 @@ const ProfilePage = () => {
       if (user) {
         fetchUserData(user.uid);
       } else {
-        Alert.alert("Not Logged In", "You need to log in first.");
         router.push("/login");
       }
     });

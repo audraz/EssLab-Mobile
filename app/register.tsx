@@ -32,15 +32,28 @@ export default function Register() {
       await setDoc(doc(firestore, "users", user.uid), {
         name,
         email,
-        createdAt: new Date().toISOString(), 
+        createdAt: new Date().toISOString(),
       });
   
       Alert.alert("Success", "Signup successful!");
-      router.push("/homepage"); 
-    } catch (error) {
-      Alert.alert("Error", error.message || "An unknown error occurred during sign-up.");
+      router.push("/homepage");
+    } catch (error: unknown) {
+      let errorMessage = "An unknown error occurred during sign-up.";
+  
+      if (error instanceof Error && "code" in error) {
+        const firebaseError = error as { code: string; message: string }; 
+        if (firebaseError.code === "auth/email-already-in-use") {
+          errorMessage = "Email is already registered. Please use a different email or log in.";
+        } else if (firebaseError.code === "auth/weak-password") {
+          errorMessage = "The password is too weak. Please use a stronger password.";
+        } else if (firebaseError.code === "auth/invalid-email") {
+          errorMessage = "The email address is invalid. Please enter a valid email.";
+        }
+      }
+  
+      Alert.alert("Sign Up Failed", errorMessage);
     }
-  };
+  };  
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
