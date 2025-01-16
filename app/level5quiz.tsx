@@ -78,6 +78,7 @@ const Level5Quiz = () => {
   const [progress, setProgress] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number | undefined }>({});
   const [showModal, setShowModal] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -107,6 +108,7 @@ const Level5Quiz = () => {
       console.error("Error fetching user answers:", error);
     }
   };
+
   const saveUserAnswer = async (questionIndex: number, answerIndex: number) => {
     if (!userId) return;
 
@@ -126,24 +128,12 @@ const Level5Quiz = () => {
       }
 
       setAnswers((prev) => ({ ...prev, [questionIndex]: answerIndex }));
-
-      const userDocRef = doc(firestore, "users", userId);
-      const userSnapshot = await getDoc(userDocRef);
-
-      if (userSnapshot.exists()) {
-        const currentProgress = userSnapshot.data()?.progress || {};
-        currentProgress.level_5 = true;
-        currentProgress.level_6 = true;
-        await updateDoc(userDocRef, { progress: currentProgress });
-      }
     } catch (error) {
       console.error("Error saving user answer:", error);
     }
   };
 
-
   const handleOptionClick = (index: number) => {
-    setAnswers({ ...answers, [currentQuestion]: index });
     saveUserAnswer(currentQuestion, index);
 
     if (currentQuestion === questions.length - 1) {
@@ -172,34 +162,21 @@ const Level5Quiz = () => {
     setShowModal(false);
   };
 
-  const updateProgress = async () => {
-    if (!userId) return;
-    try {
-      const userDocRef = doc(firestore, "users", userId);
-      const userSnapshot = await getDoc(userDocRef);
-
-      const currentProgress = userSnapshot.data()?.progress || {};
-      currentProgress["level_5"] = true;
-      currentProgress["level_6"] = true;
-
-      await updateDoc(userDocRef, { progress: currentProgress });
-    } catch (error) {
-      console.error("Error updating progress:", error);
-    }
-  };
-
-  const handleFinishQuiz = () => {
+  const handleFinishQuiz = async () => {
+    const correctAnswers = Object.keys(answers).filter(
+      (key) => questions[parseInt(key)].correct === answers[parseInt(key)]
+    ).length;
+    const score = Math.round((correctAnswers / questions.length) * 100);
+    setQuizScore(score);
     setShowModal(true);
   };
 
-  const handleReturnHome = async () => {
-    await updateProgress();
+  const handleReturnHome = () => {
     setShowModal(false);
     router.push("/homepage");
   };
 
-  const handleNextLevel = async () => {
-    await updateProgress();
+  const handleNextLevel = () => {
     router.push("/level6");
   };
 
@@ -218,7 +195,7 @@ const Level5Quiz = () => {
         <Text style={styles.title}>Quiz: Persuasive Essay</Text>
         <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
         {questions[currentQuestion].options.map((option, index: number) => {
-          const isCorrect = questions[currentQuestion].correct - 1 === index;
+          const isCorrect = questions[currentQuestion].correct === index;
           const isSelected = answers[currentQuestion] === index;
 
           return (
@@ -262,12 +239,13 @@ const Level5Quiz = () => {
               <Image source={require("../assets/popup-img.png")} style={styles.popupImage} />
               <Text style={styles.modalTitle}>Congratulations!</Text>
               <Text style={styles.modalText}>You have completed Level 5 Quiz!</Text>
+              <Text style={styles.modalText}>Your Score: {quizScore}%</Text>
               <View style={styles.modalButtons}>
                 <TouchableOpacity style={styles.modalButton} onPress={handleReturnHome}>
                   <Text style={styles.modalButtonText}>Back to Homepage</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.modalButton} onPress={handleNextLevel}>
-                  <Text style={styles.modalButtonText}>Go to Level 6</Text>
+                  <Text style={styles.modalButtonText}>Next Level</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.modalButton} onPress={handleRetry}>
                   <Text style={styles.modalButtonText}>Retry Quiz</Text>
@@ -375,7 +353,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     alignItems: "center",
-    marginHorizontal: 20, 
+    marginHorizontal: 20,
   },
   popupImage: {
     width: 150,

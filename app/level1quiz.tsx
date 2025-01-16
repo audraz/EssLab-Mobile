@@ -14,8 +14,7 @@ import {
 import { useRouter } from "expo-router";
 import { auth, firestore } from "../config/firebaseConfig";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-
-const { width: screenWidth } = Dimensions.get("window");
+import { useWindowDimensions } from "react-native";
 
 const questions = [
   {
@@ -74,10 +73,13 @@ const progressIncrement = 100 / questions.length;
 
 const Level1Quiz = () => {
   const router = useRouter();
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [progress, setProgress] = useState(0);
+  const { width, height } = useWindowDimensions(); 
+  const isLandscape = width > height;
+  const [currentQuestion, setCurrentQuestion] = useState<number>(0);
+  const [progress, setProgress] = useState<number>(0);
   const [answers, setAnswers] = useState<{ [key: number]: number | undefined }>({});
   const [showModal, setShowModal] = useState(false);
+  const [quizScore, setQuizScore] = useState<number>(0);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -172,6 +174,11 @@ const Level1Quiz = () => {
   };
 
   const handleFinishQuiz = async () => {
+    const correctAnswers = Object.keys(answers)
+  .map((key) => parseInt(key, 10)) 
+  .filter((key) => questions[key]?.correct - 1 === answers[key]).length; 
+    const score = Math.round((correctAnswers / questions.length) * 100);
+    setQuizScore(score); 
     setShowModal(true);
   };
 
@@ -186,29 +193,41 @@ const Level1Quiz = () => {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push("/homepage")} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => router.push("/homepage")}
+          style={styles.backButton}
+        >
           <Image source={require("../assets/x.png")} style={styles.backButtonImage} />
         </TouchableOpacity>
         <View style={styles.progressBarContainer}>
           <View style={[styles.progressBar, { width: `${progress}%` }]} />
         </View>
       </View>
-
+  
+      {/* Quiz Content */}
       <ScrollView contentContainerStyle={styles.quizContainer}>
         <Text style={styles.title}>Quiz: Introduction to Essay</Text>
-        <Text style={styles.questionText}>{questions[currentQuestion].question}</Text>
-        {questions[currentQuestion].options.map((option, index: number) => {
+        <Text style={styles.questionText}>
+          {questions[currentQuestion].question}
+        </Text>
+        {questions[currentQuestion].options.map((option, index) => {
           const isCorrect = questions[currentQuestion].correct - 1 === index;
           const isSelected = answers[currentQuestion] === index;
-
+  
           return (
             <TouchableOpacity
               key={index}
               style={[
                 styles.option,
-                answers[currentQuestion] !== undefined && isCorrect && styles.correctOption,
-                answers[currentQuestion] !== undefined && isSelected && !isCorrect && styles.incorrectOption,
+                answers[currentQuestion] !== undefined &&
+                  isCorrect &&
+                  styles.correctOption,
+                answers[currentQuestion] !== undefined &&
+                  isSelected &&
+                  !isCorrect &&
+                  styles.incorrectOption,
               ]}
               onPress={() => handleOptionClick(index)}
               disabled={answers[currentQuestion] !== undefined}
@@ -218,7 +237,8 @@ const Level1Quiz = () => {
           );
         })}
       </ScrollView>
-
+  
+      {/* Navigation Buttons */}
       <View style={styles.navigation}>
         {currentQuestion > 0 && (
           <TouchableOpacity style={styles.navButton} onPress={handlePrevious}>
@@ -235,22 +255,38 @@ const Level1Quiz = () => {
           </TouchableOpacity>
         )}
       </View>
-
+  
+      {/* Modal */}
       {showModal && (
         <Modal transparent={true} animationType="slide" visible={showModal}>
           <View style={styles.modal}>
-            <View style={styles.modalContent}>
-              <Image source={require("../assets/popup-img.png")} style={styles.popupImage} />
+            <View
+              style={[styles.modalContent, isLandscape && styles.modalContentLandscape]}
+            >
+              <Image
+                source={require("../assets/popup-img.png")}
+                style={styles.popupImage}
+              />
               <Text style={styles.modalTitle}>Congratulations!</Text>
               <Text style={styles.modalText}>You have completed Level 1 Quiz!</Text>
+              <Text style={styles.modalText}>Your Score: {quizScore}%</Text>
               <View style={styles.modalButtons}>
-                <TouchableOpacity style={styles.modalButton} onPress={handleReturnHome}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={handleReturnHome}
+                >
                   <Text style={styles.modalButtonText}>Back to Homepage</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.modalButton} onPress={handleNextLevel}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={handleNextLevel}
+                >
                   <Text style={styles.modalButtonText}>Next Level</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.modalButton} onPress={handleRetry}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={handleRetry}
+                >
                   <Text style={styles.modalButtonText}>Retry Quiz</Text>
                 </TouchableOpacity>
               </View>
@@ -259,7 +295,7 @@ const Level1Quiz = () => {
         </Modal>
       )}
     </View>
-  );
+  );      
 };
 
 export default Level1Quiz;
@@ -355,6 +391,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     alignItems: "center",
+    marginHorizontal: 20,
   },
   popupImage: {
     width: 150,
@@ -386,5 +423,17 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: "#FFF",
     fontWeight: "bold",
+  },
+  scoreText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "#333",
+  },  
+  modalContentLandscape: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    padding: 20,
   },
 });

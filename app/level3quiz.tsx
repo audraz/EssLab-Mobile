@@ -83,6 +83,7 @@ const Level3Quiz = () => {
   const [progress, setProgress] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number | undefined }>({});
   const [showModal, setShowModal] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -177,6 +178,11 @@ const Level3Quiz = () => {
   };
 
   const handleFinishQuiz = async () => {
+    const correctAnswers = Object.keys(answers)
+      .map((key) => parseInt(key, 10))
+      .filter((key) => questions[key].correct - 1 === answers[key]).length;
+    const score = Math.round((correctAnswers / questions.length) * 100);
+    setQuizScore(score);
     setShowModal(true);
   };
 
@@ -248,6 +254,7 @@ const Level3Quiz = () => {
               <Image source={require("../assets/popup-img.png")} style={styles.popupImage} />
               <Text style={styles.modalTitle}>Congratulations!</Text>
               <Text style={styles.modalText}>You have completed Level 3 Quiz!</Text>
+              <Text style={styles.modalText}>Your Score: {quizScore}%</Text> {/* Menampilkan skor */}
               <View style={styles.modalButtons}>
                 <TouchableOpacity style={styles.modalButton} onPress={handleReturnHome}>
                   <Text style={styles.modalButtonText}>Back to Homepage</Text>
@@ -358,7 +365,7 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: "#FFF",
     padding: 20,
-    marginHorizontal: 30, 
+    marginHorizontal: 30,
     borderRadius: 10,
     alignItems: "center",
   },

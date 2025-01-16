@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { auth, firestore } from "../config/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
+import { StatusBar } from "react-native";
 
 const levels = [
   { level: 1, title: "Introduction to Essay" },
@@ -94,6 +95,7 @@ const HomePage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFEFF" />
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Home</Text>

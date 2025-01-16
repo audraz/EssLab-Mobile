@@ -83,6 +83,7 @@ const Level4Quiz = () => {
   const [progress, setProgress] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number | undefined }>({});
   const [showModal, setShowModal] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -176,7 +177,12 @@ const Level4Quiz = () => {
     setShowModal(false);
   };
 
-  const handleFinishQuiz = async () => {
+  const handleFinishQuiz = () => {
+    const correctAnswers = Object.keys(answers)
+      .map((key) => parseInt(key, 10))
+      .filter((key) => questions[key].correct - 1 === answers[key]).length;
+    const score = Math.round((correctAnswers / questions.length) * 100);
+    setQuizScore(score);
     setShowModal(true);
   };
 
@@ -248,6 +254,7 @@ const Level4Quiz = () => {
               <Image source={require("../assets/popup-img.png")} style={styles.popupImage} />
               <Text style={styles.modalTitle}>Congratulations!</Text>
               <Text style={styles.modalText}>You have completed Level 4 Quiz!</Text>
+              <Text style={styles.modalText}>Your Score: {quizScore}%</Text>
               <View style={styles.modalButtons}>
                 <TouchableOpacity style={styles.modalButton} onPress={handleReturnHome}>
                   <Text style={styles.modalButtonText}>Back to Homepage</Text>
@@ -361,7 +368,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     alignItems: "center",
-    marginHorizontal: 20, 
+    marginHorizontal: 20,
   },
   popupImage: {
     width: 150,

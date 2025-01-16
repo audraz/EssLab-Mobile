@@ -10,6 +10,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { StatusBar } from "react-native";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -20,6 +21,7 @@ const LandingPage = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFEFF" />
       {isLandscape ? (
         <ScrollView contentContainerStyle={[styles.mainLandscape]}>
           <Image

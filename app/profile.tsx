@@ -18,6 +18,7 @@ import { updateProfile, updatePassword, signOut } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { firestore } from "../config/firebaseConfig";
 import * as ImagePicker from "expo-image-picker";
+import { StatusBar } from "react-native";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -143,6 +144,7 @@ const ProfilePage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFEFF" />
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
@@ -433,7 +435,7 @@ const styles = StyleSheet.create({
   },
   changePhotoText: {
     marginTop: 8,
-    color: "#006B49",
+    color: "#DE85C7",
     fontSize: 14,
     fontWeight: "bold",
     textAlign: "center",

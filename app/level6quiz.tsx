@@ -84,6 +84,7 @@ const Level6Quiz = () => {
   const [answers, setAnswers] = useState<{ [key: number]: number | undefined }>({});
   const [showModal, setShowModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [quizScore, setQuizScore] = useState(0);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -166,6 +167,11 @@ const Level6Quiz = () => {
   };
 
   const handleFinishQuiz = () => {
+    const correctAnswers = Object.keys(answers)
+      .map((key) => parseInt(key, 10))
+      .filter((key) => questions[key].correct - 1 === answers[key]).length;
+    const score = Math.round((correctAnswers / questions.length) * 100);
+    setQuizScore(score);
     setShowModal(true);
   };
 
@@ -232,7 +238,8 @@ const Level6Quiz = () => {
             <View style={styles.modalContent}>
               <Image source={require("../assets/popup-img.png")} style={styles.popupImage} />
               <Text style={styles.modalTitle}>Congratulations!</Text>
-              <Text style={styles.modalText}>You have completed the final level of the quiz!</Text>
+              <Text style={styles.modalText}>You have completed Level 6 Quiz!</Text>
+              <Text style={styles.modalText}>Your Score: {quizScore}%</Text>
               <View style={styles.modalButtons}>
                 <TouchableOpacity style={styles.modalButton} onPress={handleReturnHome}>
                   <Text style={styles.modalButtonText}>Back to Homepage</Text>
@@ -343,7 +350,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     alignItems: "center",
-    marginHorizontal: 20, 
+    marginHorizontal: 20,
   },
   popupImage: {
     width: 150,

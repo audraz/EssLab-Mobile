@@ -49,7 +49,7 @@ const questions = [
       "Listing items in a story",
       "Describing only what you see",
     ],
-    correct: 0,
+    correct: 1,
   },
   {
     id: 4,
@@ -83,6 +83,7 @@ const Level2Quiz = () => {
   const [progress, setProgress] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number | undefined }>({});
   const [showModal, setShowModal] = useState(false);
+  const [quizScore, setQuizScore] = useState<number>(0);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -177,6 +178,11 @@ const Level2Quiz = () => {
   };
 
   const handleFinishQuiz = async () => {
+    const correctAnswers = Object.keys(answers)
+      .map((key) => parseInt(key, 10))
+      .filter((key) => questions[key]?.correct - 1 === answers[key]).length;
+    const score = Math.round((correctAnswers / questions.length) * 100);
+    setQuizScore(score);
     setShowModal(true);
   };
 
@@ -248,6 +254,7 @@ const Level2Quiz = () => {
               <Image source={require("../assets/popup-img.png")} style={styles.popupImage} />
               <Text style={styles.modalTitle}>Congratulations!</Text>
               <Text style={styles.modalText}>You have completed Level 2 Quiz!</Text>
+              <Text style={styles.modalText}>Your Score: {quizScore}%</Text>
               <View style={styles.modalButtons}>
                 <TouchableOpacity style={styles.modalButton} onPress={handleReturnHome}>
                   <Text style={styles.modalButtonText}>Back to Homepage</Text>
