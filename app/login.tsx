@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet, Button, Alert, TouchableOpacity } from "react-native";
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  StyleSheet, 
+  Alert, 
+  TouchableOpacity, 
+  ScrollView, 
+  useWindowDimensions 
+} from "react-native";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../config/firebaseConfig";
@@ -8,6 +17,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -38,56 +49,68 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.welcomeSection}>
-        <Text style={styles.welcomeTitle}>Welcome Back</Text>
-        <Text style={styles.welcomeMessage}>
-          We're glad to see you again! Please log in to continue.
-        </Text>
-      </View>
-  
-      <View style={styles.loginSection}>
-        <Text style={styles.header}>Log In</Text>
-        <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Your Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-          />
-  
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Your Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-  
-          {/* Custom Log In Button */}
-          <TouchableOpacity onPress={handleLogin} style={styles.loginButton}>
-            <Text style={styles.loginButtonText}>Log In</Text>
-          </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Welcome Section */}
+        <View style={styles.welcomeSection}>
+          <Text style={styles.welcomeTitle}>Welcome Back</Text>
+          <Text style={styles.welcomeMessage}>
+            We're glad to see you again! Please log in to continue.
+          </Text>
         </View>
   
-        {/* Sign Up Prompt */}
-        <Text style={styles.signupPrompt}>
-          Don't have an account?{" "}
-          <TouchableOpacity onPress={() => router.push("/register")}>
-            <Text style={styles.signupLink}>Sign up here</Text>
-          </TouchableOpacity>
-        </Text>
-      </View>
+        {/* Login Section */}
+        <View
+          style={[
+            styles.loginSection,
+            { paddingHorizontal: isLandscape ? 16 : 20 }, 
+          ]}
+        >
+          <Text style={styles.header}>Log In</Text>
+          <View style={styles.form}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Your Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+            />
+  
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Your Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+  
+            {/* Custom Log In Button */}
+            <TouchableOpacity onPress={handleLogin} style={styles.loginButton}>
+              <Text style={styles.loginButtonText}>Log In</Text>
+            </TouchableOpacity>
+          </View>
+  
+          {/* Sign Up Prompt */}
+          <Text style={styles.signupPrompt}>
+            Don't have an account?{" "}
+            <TouchableOpacity onPress={() => router.push("/register")}>
+              <Text style={styles.signupLink}>Sign up here</Text>
+            </TouchableOpacity>
+          </Text>
+        </View>
+      </ScrollView>
     </View>
-  );  
+  );    
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFEF9",
+  },
+  scrollContainer: {
+    flexGrow: 1,
   },
   welcomeSection: {
     flex: 1,

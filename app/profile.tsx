@@ -9,6 +9,7 @@ import {
   Image,
   Dimensions,
   ScrollView,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -21,6 +22,8 @@ import * as ImagePicker from "expo-image-picker";
 const { width: screenWidth } = Dimensions.get("window");
 
 const ProfilePage = () => {
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height; 
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -222,44 +225,59 @@ const ProfilePage = () => {
       </ScrollView>
 
       {/* Navbar */}
-      <View style={styles.navbar}>
-        <TouchableOpacity
-          onPress={() => handleNavigation("/homepage")}
-          style={[
-            styles.navbarButton,
-            activePage === "/homepage" && styles.activeNavItem,
-          ]}
-        >
-          <Image source={require("../assets/home.png")} style={styles.icon} />
-          <Text
-            style={[
-              styles.navbarText,
-              activePage === "/homepage" && styles.activeNavText,
-            ]}
-          >
-            Home
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleNavigation("/profile")}
-          style={[
-            styles.navbarButton,
-            activePage === "/profile" && styles.activeNavItem,
-          ]}
-        >
-          <Image source={require("../assets/profile.png")} style={styles.icon} />
-          <Text
-            style={[
-              styles.navbarText,
-              activePage === "/profile" && styles.activeNavText,
-            ]}
-          >
-            Profile
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <View
+              style={[
+                styles.navbar,
+                isLandscape && styles.navbarLandscape, 
+              ]}
+            >
+              <TouchableOpacity
+                onPress={() => handleNavigation("/homepage")}
+                style={[
+                  styles.navbarButton,
+                  activePage === "/homepage" && {
+                    ...styles.activeNavItem,
+                    ...(isLandscape && { width: "80%" }), 
+                  },
+                ]}
+              >
+                <Image source={require("../assets/home.png")} style={styles.icon} />
+                <Text
+                  style={[
+                    styles.navbarText,
+                    activePage === "/homepage" && styles.activeNavText,
+                  ]}
+                >
+                  Home
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleNavigation("/profile")}
+                style={[
+                  styles.navbarButton,
+                  activePage === "/profile" && {
+                    ...styles.activeNavItem,
+                    ...(isLandscape && { width: "80%" }), 
+                  },
+                ]}
+              >
+                <View style={styles.navIndicatorWrapper}>
+                  {activePage === "/profile" && <View style={styles.navIndicator} />}
+                </View>
+                <Image source={require("../assets/profile.png")} style={styles.icon} />
+                <Text
+                  style={[
+                    styles.navbarText,
+                    activePage === "/profile" && styles.activeNavText,
+                  ]}
+                >
+                  Profile
+                </Text>
+              </TouchableOpacity>
+            </View>
     </SafeAreaView>
   );
+  
 };
 
 const styles = StyleSheet.create({
@@ -359,25 +377,47 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#DDD",
   },
+  navbarLandscape: {
+    borderTopWidth: 1, 
+    borderTopColor: "#DDD", 
+    width: "117%", 
+    left: "0%", 
+    flexDirection: "row", 
+    justifyContent: "space-evenly", 
+    alignItems: "center", 
+    paddingVertical: 10, 
+  },
+  navbarButtonLandscape: {
+    flex: 1, 
+    alignItems: "center", 
+    justifyContent: "center",  
+  },
   navbarButton: {
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "column",
-    flexBasis: screenWidth * 0.3,
+    flexBasis: "30%",
   },
   navbarText: {
     marginTop: 5,
     color: "#006B49",
-    fontSize: screenWidth * 0.035,
+    fontSize: 14,
   },
   icon: {
-    width: screenWidth * 0.06,
-    height: screenWidth * 0.06,
+    width: 24,
+    height: 24,
     resizeMode: "contain",
+  },
+  navIndicatorWrapper: {
+    position: "absolute",
+    top: -12,
+    width: "100%",
+    height: 4,
+    alignItems: "center",
   },
   navIndicator: {
     width: "90%",
-    height: 4,
+    height: "100%",
     backgroundColor: "#006B49",
     borderRadius: 2,
   },
@@ -385,6 +425,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#D4EFDF",
     borderRadius: 15,
     paddingVertical: 10,
+    width: "50%",
   },
   activeNavText: {
     color: "#006B49",

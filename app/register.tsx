@@ -36,7 +36,7 @@ export default function Register() {
       });
   
       Alert.alert("Success", "Signup successful!");
-      router.push("homepage"); 
+      router.push("/homepage"); 
     } catch (error) {
       Alert.alert("Error", error.message || "An unknown error occurred during sign-up.");
     }
@@ -101,7 +101,7 @@ export default function Register() {
           {/* Login Prompt */}
           <Text style={styles.loginPrompt}>
             Already have an account?{" "}
-            <TouchableOpacity onPress={() => router.push("login")}>
+            <TouchableOpacity onPress={() => router.push("/login")}>
               <Text style={styles.loginLink}>Log In</Text>
             </TouchableOpacity>
           </Text>

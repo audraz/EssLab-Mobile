@@ -7,14 +7,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { auth, firestore } from "../config/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const levels = [
   { level: 1, title: "Introduction to Essay" },
@@ -26,6 +24,8 @@ const levels = [
 ];
 
 const HomePage = () => {
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height; 
   const router = useRouter();
   const [userName, setUserName] = useState("User");
   const [unlockedLevels, setUnlockedLevels] = useState<number[]>([1]);
@@ -98,29 +98,41 @@ const HomePage = () => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Home</Text>
       </View>
-
+  
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Welcome Card */}
-        <View style={styles.welcomeCard}>
-          <Text style={styles.welcomeTitle}>Welcome, {userName}!</Text>
-          <Text style={styles.welcomeMessage}>
-            Discover the art of essay like never before. Whether you're a
-            beginner or looking to refine your writing, you're in the right
-            place!
-          </Text>
-          <Text style={styles.welcomeMessage}>
-            Explore our roadmap of interactive levels, designed to take you
-            step-by-step through different essay styles. Ready to start your
-            journey?
-          </Text>
-          <View style={styles.imageContainer}>
+        <View
+          style={[
+            styles.welcomeCard,
+            isLandscape && { flexDirection: "row", alignItems: "flex-start" },
+          ]}
+        >
+          <View style={[styles.textContainer, isLandscape && { width: "50%" }]}>
+            <Text style={styles.welcomeTitle}>Welcome, {userName}!</Text>
+            <Text style={styles.welcomeMessage}>
+              Discover the art of essay like never before. Whether you're a
+              beginner or looking to refine your writing, you're in the right
+              place!
+            </Text>
+            <Text style={styles.welcomeMessage}>
+              Explore our roadmap of interactive levels, designed to take you
+              step-by-step through different essay styles. Ready to start your
+              journey?
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.imageContainer,
+              isLandscape && { width: "50%", justifyContent: "center" },
+            ]}
+          >
             <Image
               source={require("../assets/image.png")}
               style={styles.responsiveImage}
             />
           </View>
         </View>
-
+  
         {/* Roadmap Levels */}
         <View style={styles.roadmapPath}>
           {levels.map((level) => (
@@ -141,14 +153,22 @@ const HomePage = () => {
           ))}
         </View>
       </ScrollView>
-
+  
       {/* Navbar */}
-      <View style={styles.navbar}>
+      <View
+        style={[
+          styles.navbar,
+          isLandscape && styles.navbarLandscape, 
+        ]}
+      >
         <TouchableOpacity
           onPress={() => handleNavigation("/homepage")}
           style={[
             styles.navbarButton,
-            activePage === "/homepage" && styles.activeNavItem,
+            activePage === "/homepage" && {
+              ...styles.activeNavItem,
+              ...(isLandscape && { width: "80%" }), 
+            },
           ]}
         >
           <View style={styles.navIndicatorWrapper}>
@@ -168,16 +188,13 @@ const HomePage = () => {
           onPress={() => handleNavigation("/profile")}
           style={[
             styles.navbarButton,
-            activePage === "/profile" && styles.activeNavItem,
+            activePage === "/profile" && {
+              ...styles.activeNavItem,
+              ...(isLandscape && { width: "80%" }), 
+            },
           ]}
         >
-          <View style={styles.navIndicatorWrapper}>
-            {activePage === "/profile" && <View style={styles.navIndicator} />}
-          </View>
-          <Image
-            source={require("../assets/profile.png")}
-            style={styles.icon}
-          />
+          <Image source={require("../assets/profile.png")} style={styles.icon} />
           <Text
             style={[
               styles.navbarText,
@@ -189,7 +206,7 @@ const HomePage = () => {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
-  );
+  );   
 };
 
 const styles = StyleSheet.create({
@@ -202,23 +219,29 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   header: {
-    backgroundColor: "#FFFFFF", 
-    padding: 12,
-    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 16,
     justifyContent: "center",
-    borderBottomWidth: 1, 
-    borderBottomColor: "#DDD", 
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDD",
+    width: "100%",
+  },
+  headerLandscape: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
   },
   headerTitle: {
-    fontSize: screenWidth * 0.05,
-    color: "#000000", 
+    fontSize: 20,
+    color: "#000000",
     fontWeight: "bold",
   },
   welcomeCard: {
     backgroundColor: "#FFFFFF",
-    marginHorizontal: screenWidth * 0.05,
+    marginHorizontal: 20,
     marginVertical: 20,
-    padding: screenWidth * 0.05,
+    padding: 20,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#DDD",
@@ -228,14 +251,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     alignItems: "center",
   },
+  textContainer: {
+    marginBottom: 10,
+  },
   welcomeTitle: {
-    fontSize: screenWidth * 0.06,
+    fontSize: 24,
     fontWeight: "bold",
     marginBottom: 10,
     textAlign: "center",
   },
   welcomeMessage: {
-    fontSize: screenWidth * 0.04,
+    fontSize: 16,
     color: "#676767",
     marginBottom: 10,
     textAlign: "justify",
@@ -245,8 +271,8 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   responsiveImage: {
-    width: screenWidth * 0.5,
-    height: screenWidth * 0.5,
+    width: 150,
+    height: 150,
     resizeMode: "contain",
   },
   roadmapPath: {
@@ -259,9 +285,9 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   levelCircle: {
-    width: screenWidth * 0.2,
-    height: screenWidth * 0.2,
-    borderRadius: screenWidth * 0.1,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
@@ -274,11 +300,11 @@ const styles = StyleSheet.create({
   },
   levelText: {
     color: "#FFFFFF",
-    fontSize: screenWidth * 0.05,
+    fontSize: 20,
     fontWeight: "bold",
   },
   levelTitle: {
-    fontSize: screenWidth * 0.04,
+    fontSize: 16,
     color: "#333",
     textAlign: "center",
   },
@@ -294,20 +320,35 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#DDD",
   },
+  navbarLandscape: {
+    borderTopWidth: 1, 
+    borderTopColor: "#DDD", 
+    width: "117%", 
+    left: "0%", 
+    flexDirection: "row", 
+    justifyContent: "space-evenly", 
+    alignItems: "center", 
+    paddingVertical: 10, 
+  },
+  navbarButtonLandscape: {
+    flex: 1, 
+    alignItems: "center", 
+    justifyContent: "center",  
+  },
   navbarButton: {
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "column",
-    flexBasis: screenWidth * 0.3,
+    flexBasis: "30%",
   },
   navbarText: {
     marginTop: 5,
     color: "#006B49",
-    fontSize: screenWidth * 0.035,
+    fontSize: 14,
   },
   icon: {
-    width: screenWidth * 0.06,
-    height: screenWidth * 0.06,
+    width: 24,
+    height: 24,
     resizeMode: "contain",
   },
   navIndicatorWrapper: {
@@ -327,7 +368,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#D4EFDF",
     borderRadius: 15,
     paddingVertical: 10,
-    width: screenWidth * 0.5,
+    width: "50%",
   },
   activeNavText: {
     color: "#006B49",
