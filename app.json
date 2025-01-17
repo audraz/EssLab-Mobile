@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.skar123.EssLab"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +21,8 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "CAMERA"
-      ]
+      ],
+      "package": "com.skar123.EssLab"
     },
     "web": {
       "bundler": "metro",
@@ -34,7 +36,7 @@
         {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
-          "resizeMode": "contain",
+          "resizeMode": "cover",
           "backgroundColor": "#ffffff"
         }
       ]
@@ -44,6 +46,14 @@
     },
     "assetBundlePatterns": [
       "**/*"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "76106801-319f-448b-88f4-1d40aacb0713"
+      }
+    }
   }
 }
